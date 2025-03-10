@@ -2,9 +2,28 @@ from shiny import ui, reactive, render
 import pandas as pd
 import json
 
+# Table styling
+table_styles = ui.tags.style("""
+	table {
+		border-collapse: collapse;
+		width: 100%;
+	}
+	th, td {
+		border: 1px solid black;
+		padding: 8px;
+		text-align: center;
+	}
+	th {
+		background-color: #f2f2f2;
+		font-weight: bold;
+	}
+"""
+)
+
 # UI for data loading
 data_loading_ui = ui.nav_panel(
 	"Data Loading",
+	table_styles, 
 	ui.layout_sidebar(
 	    ui.sidebar(
 		ui.input_file("file",
@@ -19,12 +38,13 @@ data_loading_ui = ui.nav_panel(
 		ui.output_text("file_name"),
 		ui.output_text("error_message", inline=True)
 	),
-	ui.card(
-		ui.output_text("error_message_main"),
-		ui.output_table("data_preview")
-	),	
+	ui.card(ui.output_text("error_message_main"),
+	ui.card(ui.panel_title("Dataframe preview"), ui.output_table("data_preview")),
+	ui.card(ui.panel_title("Summary Statistics"), ui.output_table("summary_stats")),
+	ui.card(ui.panel_title("Data Types of Each Column"),ui.output_table("data_types")),	
 	width = 350
 	) 
+)
 )
 
 def data_loading_server(input, output, session):
@@ -96,4 +116,20 @@ def data_loading_server(input, output, session):
 		df = df_store.get()
 		if df is not None: 
 			return df.head()
+		return pd.DataFrame()
+
+	@output
+	@render.table
+	def summary_stats():
+		df = df_store.get()
+		if df is not None:
+			return df.describe().reset_index()
+		return pd.DataFrame()
+
+	@output
+	@render.table
+	def data_types():
+		df = df_store.get()
+		if df is not None:
+			return pd.DataFrame(df.dtypes, columns = ["Data Type"]).reset_index().rename(columns = {"index":"Column"})
 		return pd.DataFrame()
