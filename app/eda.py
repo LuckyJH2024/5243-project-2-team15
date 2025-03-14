@@ -9,3 +9,4 @@ eda_ui = ui.nav_panel(
 def eda_server(input, output, session):
     # Logic for exploratory data analysis
     pass 
+#df_cleaned
