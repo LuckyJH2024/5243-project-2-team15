@@ -1,4 +1,5 @@
 from shiny import ui, reactive, render
+from data_store import df_raw, error_store
 import time
 import pandas as pd
 import json
@@ -50,7 +51,7 @@ data_loading_ui = ui.nav_panel(
 )
 
 def data_loading_server(input, output, session):
-	df_store = reactive.value(None)
+	df_raw = reactive.value(None)
 	error_store = reactive.value("")
 	
 	@output
@@ -111,18 +112,18 @@ def data_loading_server(input, output, session):
 						df_store.set(None)
 						return
 
-					df_store.set(df)
+					df_raw.set(df)
 					error_store.set("")
 					
 					p.set(100, "Reading Complete!")
 
 			except Exception as e:
 				error_store.set(f"Error loading file: {str(e)}")
-				df_store.set(None)	
+				df_raw.set(None)	
 	@output
 	@render.table
 	def data_preview():
-		df = df_store.get()
+		df = df_raw.get()
 		if df is not None: 
 			return df.head()
 		return pd.DataFrame()
@@ -130,7 +131,7 @@ def data_loading_server(input, output, session):
 	@output
 	@render.table
 	def summary_stats():
-		df = df_store.get()
+		df = df_raw.get()
 		if df is not None:
 			return df.describe().reset_index()
 		return pd.DataFrame()
@@ -138,7 +139,7 @@ def data_loading_server(input, output, session):
 	@output
 	@render.table
 	def data_types():
-		df = df_store.get()
+		df = df_raw.get()
 		if df is not None:
 			return pd.DataFrame(df.dtypes, columns = ["Data Type"]).reset_index().rename(columns = {"index":"Column"})
 		return pd.DataFrame()
