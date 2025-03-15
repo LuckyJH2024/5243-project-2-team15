@@ -113,6 +113,7 @@ def data_loading_server(input, output, session):
 						return
 
 					df_raw.set(df)
+					print("df_raw sucessfully set")
 					error_store.set("")
 					
 					p.set(100, "Reading Complete!")

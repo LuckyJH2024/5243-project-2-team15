@@ -5,18 +5,16 @@ import seaborn as sns
 from data_store import df_raw, df_cleaned 
 
 data_cleaning_ui = ui.nav_panel(
-    "Data Cleaning",
-    ui.layout_sidebar(
-        ui.sidebar(
-            ui.input_select("column_select", "Select Column", choices=[]),
-            ui.input_select("cleaning_action", "Select Cleaning Action", 
-                            choices=["Fill Missing Values", "Remove Outliers", "Convert to Numeric", "Standardize Text", "One-Hot Encode"]),
-            ui.output_ui("cleaning_suggestions"),
-            ui.input_action_button("apply_cleaning", "Apply Cleaning")
+	"Data Cleaning",
+	ui.layout_sidebar(ui.sidebar(
+		ui.input_select("column_select", "Select Column", choices=[]),
+		ui.input_select("cleaning_action", "Select Cleaning Action", choices=["Fill Missing Values", "Remove Outliers", "Convert to Numeric", "Standardize Text", "One-Hot Encode"]),
+		ui.output_ui("cleaning_suggestions"), 
+		ui.input_action_button("apply_cleaning", "Apply Cleaning")
         ),
         ui.layout_columns(
-            ui.card(ui.panel_title("Cleaned Data Preview"), ui.output_table("cleaned_data_table")),
-            ui.card(ui.panel_title("Column-Based Cleaning Suggestions"), ui.output_ui("column_suggestions"))
+		ui.card(ui.panel_title("Cleaned Data Preview"), ui.output_table("cleaned_data_table")),
+		ui.card(ui.panel_title("Column-Based Cleaning Suggestions"), ui.output_ui("column_suggestions"))
         )
     )
 )
@@ -26,15 +24,16 @@ def data_cleaning_server(input, output, session):
     @reactive.effect
     def update_column_choices():
         df = df_raw.get()
-        if df is not None:
-            session.send_input("column_select", {"choices": df.columns.tolist()})
+        print("df_raw successfuly retreived")
+	if df is not None:
+	    session.send_input("column_select", {"choices": df.columns.tolist()})
 
     @output
     @render.ui
     def column_suggestions():
-        df = df_raw.get() 
-        if df is None or input.column_select() is None:
-            return ui.p("No column selected.")
+	df = df_raw.get() 
+	if df is None or input.column_select() is None:
+	    return ui.p("No column selected.")
         
         col = input.column_select()
         dtype = df[col].dtype
