@@ -34,6 +34,14 @@ fig = px.scatter(df_cleaned, x=x_col, y=y_col, opacity=0.6, trendline="ols" if a
 fig.update_layout(title="Scatterplot of Selected Features")
 st.plotly_chart(fig)
 
+# Histogram
+st.header("Feature Histogram")
+hist_col = st.selectbox("Select a feature for histogram", df_cleaned.columns)
+bins = st.slider("Select number of bins", min_value=5, max_value=50, value=20)
+hist_fig = px.histogram(df_cleaned, x=hist_col, nbins=bins, marginal="rug")
+hist_fig.update_layout(title=f"Histogram of {hist_col}")
+st.plotly_chart(hist_fig)
+
 # Heatmap
 st.header("Correlation Heatmap")
 corr_matrix = df_cleaned.corr()
