@@ -34,6 +34,16 @@ fig = px.scatter(df_cleaned, x=x_col, y=y_col, opacity=0.6, trendline="ols" if a
 fig.update_layout(title="Scatterplot of Selected Features")
 st.plotly_chart(fig)
 
+# Heatmap
+st.header("Correlation Heatmap")
+corr_matrix = df_cleaned.corr()
+heatmap_fig = ff.create_annotated_heatmap(z=corr_matrix.values,
+                                          x=list(corr_matrix.columns),
+                                          y=list(corr_matrix.index),
+                                          annotation_text=np.round(corr_matrix.values, 2),
+                                          colorscale="Viridis")
+st.plotly_chart(heatmap_fig)
+
 # Display feature summaries
 st.header("Feature Summaries")
 st.write("**Response Feature Summary:**")
