@@ -80,5 +80,3 @@ def eda_server(input, output, session):
     def stats():
         return f"Mean of {input.x_col()}: {df_cleaned[input.x_col()].mean()}\nMedian: {df_cleaned[input.x_col()].median()}\nStd Dev: {df_cleaned[input.x_col()].std()}"
 
-# Create Shiny App
-app = App(eda_ui(), eda_server)
