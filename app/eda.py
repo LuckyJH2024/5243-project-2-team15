@@ -2,7 +2,6 @@ from shiny import ui
 import pandas as pd
 import plotly.express as px
 import plotly.figure_factory as ff
-import streamlit as st
 import numpy as np
 
 # UI for exploratory data analysis (EDA)
@@ -15,71 +14,71 @@ def eda_server(input, output, session):
     # Logic for exploratory data analysis
     pass 
 
-# Load data (df_cleaned)
-st.title("Exploratory Data Analysis (EDA)")
+# UI Layout
+def eda_ui():
+    return ui.page_fluid(
+        ui.panel_title("Exploratory Data Analysis (EDA)"),
+        ui.layout_sidebar(
+            ui.panel_sidebar(
+                ui.input_select("filter_col", "Select column to filter", []),
+                ui.input_checkbox_group("selected_values", "Select values to include", []),
+                ui.input_select("x_col", "Select X-axis feature", []),
+                ui.input_select("y_col", "Select Y-axis feature", []),
+                ui.input_select("color_col", "Select color feature", [None]),
+                ui.input_select("size_col", "Select size feature", [None]),
+                ui.input_select("trendline_option", "Select trendline type", [None, "ols", "lowess"]),
+                ui.input_select("hist_col", "Select a feature for histogram", []),
+                ui.input_slider("bins", "Select number of bins", 5, 50, 20),
+                ui.input_select("box_col", "Select a feature for box plot", []),
+            ),
+            ui.panel_main(
+                ui.output_table("summary"),
+                ui.output_plot("scatter_plot"),
+                ui.output_plot("heatmap"),
+                ui.output_plot("histogram"),
+                ui.output_plot("box_plot"),
+                ui.output_text("stats")
+            )
+        )
+    )
 
-# Dataset Filtering
-st.header("Dataset Filtering")
-filter_col = st.selectbox("Select column to filter", df_cleaned.columns)
-unique_values = df_cleaned[filter_col].unique()
-selected_values = st.multiselect("Select values to include", unique_values, default=unique_values[:5])
-df_filtered = df_cleaned[df_cleaned[filter_col].isin(selected_values)]
+# Server Logic
+def eda_server(input, output, session):
+    df_cleaned = pd.read_csv("your_dataset.csv")  # Load dataset
+    
+    @render.ui
+    def filter_col():
+        return ui.update_select("filter_col", choices=df_cleaned.columns.tolist())
 
-# Display summary statistics
-st.header("Dataset Summary")
-st.write(df_filtered.describe())
+    @render.ui
+    def selected_values():
+        return ui.update_checkbox_group("selected_values", choices=df_cleaned[input.filter_col()].unique().tolist())
+    
+    @render.table
+    def summary():
+        return df_cleaned.describe()
 
-# Select features for scatter plot
-st.header("Scatter Plot Analysis")
-x_col = st.selectbox("Select X-axis feature", df_filtered.columns)
-y_col = st.selectbox("Select Y-axis feature", df_filtered.columns)
-color_col = st.selectbox("Select color feature", [None] + list(df_filtered.columns))
-size_col = st.selectbox("Select size feature", [None] + list(df_filtered.columns))
-trendline_option = st.selectbox("Select trendline type", [None, "ols", "lowess"])
+    @render.plot
+    def scatter_plot():
+        fig = px.scatter(df_cleaned, x=input.x_col(), y=input.y_col(), color=input.color_col(), size=input.size_col(), trendline=input.trendline_option())
+        return fig
 
-# Create scatter plot
-fig = px.scatter(df_filtered, x=x_col, y=y_col, color=color_col, size=size_col,
-                 opacity=0.6, trendline=trendline_option)
-fig.update_layout(title="Scatterplot of Selected Features")
-st.plotly_chart(fig)
+    @render.plot
+    def heatmap():
+        corr_matrix = df_cleaned.corr()
+        return ff.create_annotated_heatmap(z=corr_matrix.values, x=corr_matrix.columns, y=corr_matrix.index, annotation_text=np.round(corr_matrix.values, 2), colorscale="Viridis")
 
-# Display feature summaries
-st.header("Feature Summaries")
-st.write("**Response Feature Summary:**")
-st.write(df_filtered[x_col].describe())
-st.write("**Explanatory Feature Summary:**")
-st.write(df_filtered[y_col].describe())
+    @render.plot
+    def histogram():
+        return px.histogram(df_cleaned, x=input.hist_col(), nbins=input.bins(), color=input.color_col())
 
-# Heatmap
-st.header("Correlation Heatmap")
-corr_matrix = df_filtered.corr()
-heatmap_fig = ff.create_annotated_heatmap(z=corr_matrix.values,
-                                          x=list(corr_matrix.columns),
-                                          y=list(corr_matrix.index),
-                                          annotation_text=np.round(corr_matrix.values, 2),
-                                          colorscale="Viridis")
-st.plotly_chart(heatmap_fig)
+    @render.plot
+    def box_plot():
+        return px.box(df_cleaned, y=input.box_col(), points="all")
+    
+    @render.text
+    def stats():
+        return f"Mean of {input.x_col()}: {df_cleaned[input.x_col()].mean()}\nMedian: {df_cleaned[input.x_col()].median()}\nStd Dev: {df_cleaned[input.x_col()].std()}"
 
-# Histogram
-st.header("Feature Histogram")
-hist_col = st.selectbox("Select a feature for histogram", df_filtered.columns)
-bins = st.slider("Select number of bins", min_value=5, max_value=50, value=20)
-hist_fig = px.histogram(df_filtered, x=hist_col, nbins=bins, marginal="rug", color=color_col)
-hist_fig.update_layout(title=f"Histogram of {hist_col}")
-st.plotly_chart(hist_fig)
-
-# Box Plot for Outlier Detection
-st.header("Box Plot Analysis")
-box_col = st.selectbox("Select a feature for box plot", df_filtered.columns)
-box_fig = px.box(df_filtered, y=box_col, points="all")
-box_fig.update_layout(title=f"Box Plot of {box_col}")
-st.plotly_chart(box_fig)
-
-# Dynamic Insights
-st.header("Dynamic Statistical Insights")
-st.write(f"**Mean of {x_col}:**", df_filtered[x_col].mean())
-st.write(f"**Median of {x_col}:**", df_filtered[x_col].median())
-st.write(f"**Standard Deviation of {x_col}:**", df_filtered[x_col].std())
-st.write(f"**Mean of {y_col}:**", df_filtered[y_col].mean())
-st.write(f"**Median of {y_col}:**", df_filtered[y_col].median())
-st.write(f"**Standard Deviation of {y_col}:**", df_filtered[y_col].std())
+# Create Shiny App
+app = App(eda_ui(), eda_server)
