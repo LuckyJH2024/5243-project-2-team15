@@ -3,23 +3,13 @@ import pandas as pd
 import plotly.express as px
 import plotly.figure_factory as ff
 import numpy as np
-
-# UI for exploratory data analysis (EDA)
-eda_ui = ui.nav_panel(
-    "Exploratory Data Analysis",
-    ui.output_plot("edaPlot")
-)
-
-def eda_server(input, output, session):
-    # Logic for exploratory data analysis
-    pass 
+from data_store import df_cleaned
 
 # UI Layout
-def eda_ui():
-    return ui.page_fluid(
+eda_ui = ui.page_fluid(
         ui.panel_title("Exploratory Data Analysis (EDA)"),
         ui.layout_sidebar(
-            ui.panel_sidebar(
+            ui.sidebar(
                 ui.input_select("filter_col", "Select column to filter", []),
                 ui.input_checkbox_group("selected_values", "Select values to include", []),
                 ui.input_select("x_col", "Select X-axis feature", []),
@@ -31,20 +21,20 @@ def eda_ui():
                 ui.input_slider("bins", "Select number of bins", 5, 50, 20),
                 ui.input_select("box_col", "Select a feature for box plot", []),
             ),
-            ui.panel_main(
-                ui.output_table("summary"),
-                ui.output_plot("scatter_plot"),
-                ui.output_plot("heatmap"),
-                ui.output_plot("histogram"),
-                ui.output_plot("box_plot"),
-                ui.output_text("stats")
+            ui.layout_columns(
+                ui.card(ui.panel_title("Summary"),ui.output_table("summary")),
+                ui.card(ui.output_plot("scatter_plot")),
+                ui.card(ui.output_plot("heatmap")),
+                ui.card(ui.output_plot("histogram")),
+                ui.card(ui.output_plot("box_plot")),
+                ui.card(ui.output_text("stats"))
             )
         )
     )
 
 # Server Logic
 def eda_server(input, output, session):
-    df_cleaned = pd.read_csv("your_dataset.csv")  # Load dataset
+    df_cleaned = df_cleaned.get()
     
     @render.ui
     def filter_col():
