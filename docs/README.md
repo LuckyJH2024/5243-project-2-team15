@@ -68,7 +68,7 @@ The application will start at http://127.0.0.1:8001 or http://localhost:8001
 ## Project Structure
 
 ```
-APP-V2/
+docs/
 ├── app.py                  # Main application file
 ├── data_store.py           # Data storage module
 ├── data_loading.py         # Data loading module
