@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Data Analysis and Feature Engineering Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/shinylive@0.2.3/shinylive.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shinylive@0.2.3/shinylive.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #000;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .description {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #555;
+        }
+        #shinylive-app {
+            width: 100%;
+            height: 800px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            background-color: white;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #777;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Data Analysis and Feature Engineering Platform</h1>
+        <p class="description">
+            A comprehensive interactive data analysis application built with Python and Shiny,
+            providing a complete data processing workflow from data loading to feature engineering.
+        </p>
+        
+        <div id="shinylive-app"></div>
+        
+        <div class="footer">
+            <p>This application is powered by <a href="https://shiny.posit.co/py/" target="_blank">Shiny for Python</a> and <a href="https://shiny.posit.co/py/docs/shinylive.html" target="_blank">Shinylive</a>.</p>
+        </div>
+    </div>
+
+    <script>
+        // Initialize the Shinylive application
+        const app = new shinylive.App({
+            elementId: "shinylive-app",
+            components: [
+                {
+                    name: "app.py",
+                    type: "py",
+                    content: `from shiny import App, ui
+from data_loading import data_loading_ui, data_loading_server
+from data_cleaning import data_cleaning_ui, data_cleaning_server
+from feature_engineering import feature_engineering_ui, feature_engineering_server
+from eda import eda_ui, eda_server
+from data_download import data_download_ui, data_download_server
+from user_guide import user_guide_ui, user_guide_server
+from data_store import df_raw, df_cleaned, df_engineered, error_store
+
+print("Initializing application...")
+
+# Application title and description
+app_title = "Data Analysis and Feature Engineering Platform"
+app_description = ""  # Removed the introduction text
+
+print("Creating UI components...")
+
+# Application UI
+app_ui = ui.page_fluid(
+    ui.tags.style("""
+        .app-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #000000;
+            margin-bottom: 10px;
+        }
+        
+        /* Main navigation bar styles */
+        .nav-tabs {
+            background-color: #000000;
+        }
+        
+        .nav-tabs > li > a {
+            color: #FFFFFF;
+        }
+        
+        .nav-tabs > li > a:hover {
+            background-color: #333333;
+            color: #FFFFFF;
+        }
+        
+        /* Active tab in main navigation */
+        .nav-tabs > li.active > a, 
+        .nav-tabs > li.active > a:focus, 
+        .nav-tabs > li.active > a:hover {
+            background-color: #444444;
+            color: #FFFFFF;
+            font-weight: bold;
+        }
+        
+        /* Ensure sub-navigation bar remains unchanged */
+        .tab-content .nav-tabs {
+            background-color: transparent;
+        }
+        
+        .tab-content .nav-tabs > li > a {
+            color: #007bff;
+        }
+        
+        .tab-content .nav-tabs > li > a:hover {
+            background-color: #f8f9fa;
+            color: #0056b3;
+        }
+        
+        .tab-content .nav-tabs > li.active > a,
+        .tab-content .nav-tabs > li.active > a:focus,
+        .tab-content .nav-tabs > li.active > a:hover {
+            background-color: #FFFFFF;
+            color: #495057;
+            font-weight: normal;
+        }
+    """),
+    ui.div(
+        ui.div(
+            ui.h1("Data Analysis and Feature Engineering Platform", class_="app-title"),
+            class_="col-12"
+        ),
+        class_="row"
+    ),
+    
+    # Navigation bar
+    ui.navset_tab(
+        user_guide_ui,
+        data_loading_ui,
+        data_cleaning_ui,
+        eda_ui,
+        feature_engineering_ui,
+        data_download_ui
+    )
+)
+
+print("Defining server functions...")
+
+# Server function
+def server(input, output, session):
+    print("Server function called...")
+    # Initialize server functions for each module
+    user_guide_server(input, output, session)
+    data_loading_server(input, output, session)
+    data_cleaning_server(input, output, session)
+    eda_server(input, output, session)
+    feature_engineering_server(input, output, session)
+    data_download_server(input, output, session)
+    print("All module server functions initialized...")
+
+# Create application
+print("Creating application instance...")
+app = App(app_ui, server)
+
+# Run application
+if __name__ == "__main__":
+    app.run()`
+                },
+                {
+                    name: "data_store.py",
+                    type: "py",
+                    content: `from shiny import reactive
+
+# Create reactive values
+df_raw = reactive.Value(None)
+df_cleaned = reactive.Value(None)
+df_engineered = reactive.Value(None)
+error_store = reactive.Value("")
+selected_model = reactive.Value(None)
+model_results = reactive.Value(None)`
+                },
+                {
+                    name: "data_loading.py",
+                    type: "py",
+                    content: `from shiny import ui, reactive, render
+import pandas as pd
+import numpy as np
+from data_store import df_raw, df_cleaned, error_store
+
+# Data Loading UI
+data_loading_ui = ui.nav_panel(
+    "Data Loading",
+    ui.layout_sidebar(
+        ui.sidebar(
+            ui.h3("Data Source"),
+            ui.input_radio_buttons(
+                "data_source",
+                "Select Data Source",
+                {
+                    "upload": "Upload File",
+                    "sample": "Sample Dataset"
+                },
+                selected="sample"
+            ),
+            ui.panel_conditional(
+                "input.data_source === 'upload'",
+                ui.input_file("file1", "Choose File", multiple=False, accept=[".csv", ".xlsx", ".json", ".rds"]),
+                ui.input_text("separator", "CSV Separator (if applicable)", value=","),
+                ui.input_checkbox("header", "File has header", value=True)
+            ),
+            ui.panel_conditional(
+                "input.data_source === 'sample'",
+                ui.input_select(
+                    "sample_dataset",
+                    "Select Sample Dataset",
+                    {
+                        "iris": "Iris Flower Dataset",
+                        "mtcars": "Motor Trend Car Road Tests",
+                        "diamonds": "Diamonds Dataset",
+                        "titanic": "Titanic Survival Dataset"
+                    }
+                )
+            ),
+            ui.input_action_button("load_data", "Process Data", class_="btn-primary"),
+            ui.hr(),
+            ui.output_text("data_status"),
+            width=300
+        ),
+        ui.navset_tab(
+            ui.nav_panel(
+                "Data Preview",
+                ui.card(
+                    ui.h3("Data Preview"),
+                    ui.output_table("data_preview")
+                )
+            ),
+            ui.nav_panel(
+                "Data Summary",
+                ui.card(
+                    ui.h3("Data Summary"),
+                    ui.output_text("data_summary")
+                )
+            ),
+            ui.nav_panel(
+                "Data Types",
+                ui.card(
+                    ui.h3("Data Types"),
+                    ui.output_table("data_types")
+                )
+            )
+        )
+    )
+)
+
+def data_loading_server(input, output, session):
+    # Load sample datasets
+    def get_sample_dataset(name):
+        if name == "iris":
+            return pd.read_csv("https://raw.githubusercontent.com/mwaskom/seaborn-data/master/iris.csv")
+        elif name == "mtcars":
+            return pd.read_csv("https://raw.githubusercontent.com/mwaskom/seaborn-data/master/mpg.csv")
+        elif name == "diamonds":
+            # Use a smaller subset of the diamonds dataset
+            diamonds = pd.read_csv("https://raw.githubusercontent.com/mwaskom/seaborn-data/master/diamonds.csv")
+            return diamonds.sample(1000, random_state=42)
+        elif name == "titanic":
+            return pd.read_csv("https://raw.githubusercontent.com/mwaskom/seaborn-data/master/titanic.csv")
+        return None
+
+    # Process data when button is clicked
+    @reactive.effect
+    @reactive.event(input.load_data)
+    def _():
+        if input.data_source() == "upload":
+            file_info = input.file1()
+            if not file_info:
+                error_store.set("No file selected")
+                return
+            
+            file_path = file_info[0]["datapath"]
+            file_name = file_info[0]["name"]
+            
+            try:
+                if file_name.endswith(".csv"):
+                    data = pd.read_csv(file_path, sep=input.separator())
+                elif file_name.endswith(".xlsx"):
+                    data = pd.read_excel(file_path)
+                elif file_name.endswith(".json"):
+                    data = pd.read_json(file_path)
+                elif file_name.endswith(".rds"):
+                    # This is a placeholder - actual RDS reading would require pyreadr
+                    error_store.set("RDS files not supported in this demo")
+                    return
+                else:
+                    error_store.set("Unsupported file format")
+                    return
+                
+                if not input.header():
+                    # If no header, set column names to Column1, Column2, etc.
+                    data.columns = [f"Column{i+1}" for i in range(data.shape[1])]
+                
+                df_raw.set(data)
+                df_cleaned.set(data.copy())
+                error_store.set("")
+            except Exception as e:
+                error_store.set(f"Error loading file: {str(e)}")
+        else:  # Sample dataset
+            dataset_name = input.sample_dataset()
+            data = get_sample_dataset(dataset_name)
+            if data is not None:
+                df_raw.set(data)
+                df_cleaned.set(data.copy())
+                error_store.set("")
+            else:
+                error_store.set("Failed to load sample dataset")
+
+    # Data preview
+    @output
+    @render.table
+    def data_preview():
+        data = df_raw.get()
+        if data is not None:
+            return data.head(10)
+        return pd.DataFrame()
+
+    # Data summary
+    @output
+    @render.text
+    def data_summary():
+        data = df_raw.get()
+        if data is not None:
+            summary = f"Rows: {data.shape[0]}, Columns: {data.shape[1]}\n\n"
+            summary += "Numeric Columns:\n"
+            numeric_cols = data.select_dtypes(include=['number']).columns.tolist()
+            summary += ", ".join(numeric_cols) + "\n\n"
+            
+            summary += "Categorical Columns:\n"
+            cat_cols = data.select_dtypes(exclude=['number']).columns.tolist()
+            summary += ", ".join(cat_cols) + "\n\n"
+            
+            summary += "Missing Values:\n"
+            missing = data.isnull().sum()
+            missing = missing[missing > 0]
+            if len(missing) > 0:
+                for col, count in missing.items():
+                    summary += f"{col}: {count} ({count/len(data):.1%})\n"
+            else:
+                summary += "No missing values\n"
+            
+            return summary
+        return "No data loaded"
+
+    # Data types
+    @output
+    @render.table
+    def data_types():
+        data = df_raw.get()
+        if data is not None:
+            types_df = pd.DataFrame({
+                'Column': data.columns,
+                'Type': data.dtypes.astype(str),
+                'Non-Null Count': data.count(),
+                'Null Count': data.isnull().sum(),
+                'Unique Values': [data[col].nunique() for col in data.columns]
+            })
+            return types_df
+        return pd.DataFrame()
+
+    # Data status
+    @output
+    @render.text
+    def data_status():
+        data = df_raw.get()
+        error = error_store.get()
+        
+        if error:
+            return f"Error: {error}"
+        
+        if data is None:
+            return "Status: No data loaded"
+        
+        return f"Status: Data loaded successfully\nRows: {data.shape[0]}, Columns: {data.shape[1]}"
+`
+                },
+                {
+                    name: "user_guide.py",
+                    type: "py",
+                    content: `from shiny import ui
+
+# User Guide UI
+user_guide_ui = ui.nav_panel(
+    "User Guide",
+    ui.layout_sidebar(
+        ui.sidebar(
+            ui.h3("Navigation"),
+            ui.tags.ul(
+                ui.tags.li(ui.a("Overview", href="#overview")),
+                ui.tags.li(ui.a("Key Features", href="#key-features")),
+                ui.tags.li(ui.a("Navigation", href="#navigation")),
+                ui.tags.li(ui.a("Detailed Instructions", href="#detailed-instructions")),
+                ui.tags.li(ui.a("Tips and Best Practices", href="#tips")),
+                ui.tags.li(ui.a("Troubleshooting", href="#troubleshooting"))
+            ),
+            width=250
+        ),
+        ui.card(
+            ui.h2("Data Analysis and Feature Engineering Platform User Guide", id="overview"),
+            ui.p("This guide provides detailed instructions on how to use the Data Analysis and Feature Engineering Platform."),
+            
+            ui.h3("Overview"),
+            ui.p("The Data Analysis and Feature Engineering Platform is a comprehensive tool designed to streamline the data analysis workflow. It provides an intuitive interface for data loading, cleaning, exploratory analysis, feature engineering, and data export."),
+            
+            ui.h3("Key Features", id="key-features"),
+            ui.tags.ul(
+                ui.tags.li(ui.strong("Data Loading:"), " Upload your own data or use built-in sample datasets"),
+                ui.tags.li(ui.strong("Data Cleaning:"), " Handle missing values, remove outliers, and transform data types"),
+                ui.tags.li(ui.strong("Exploratory Data Analysis:"), " Visualize and understand your data through various plots and statistics"),
+                ui.tags.li(ui.strong("Feature Engineering:"), " Create new features, transform existing ones, and apply dimensionality reduction"),
+                ui.tags.li(ui.strong("Data Download:"), " Export your processed data in various formats")
+            ),
+            
+            ui.h3("Navigation", id="navigation"),
+            ui.p("The application is organized into several tabs, each focusing on a specific aspect of the data analysis workflow:"),
+            ui.tags.ol(
+                ui.tags.li(ui.strong("User Guide:"), " This page, providing instructions and help"),
+                ui.tags.li(ui.strong("Data Loading:"), " Upload or select data for analysis"),
+                ui.tags.li(ui.strong("Data Cleaning:"), " Clean and preprocess your data"),
+                ui.tags.li(ui.strong("Exploratory Analysis:"), " Visualize and explore your data"),
+                ui.tags.li(ui.strong("Feature Engineering:"), " Create and transform features"),
+                ui.tags.li(ui.strong("Data Download:"), " Export your processed data")
+            ),
+            
+            ui.h3("Detailed Instructions", id="detailed-instructions"),
+            
+            ui.h4("Data Upload"),
+            ui.p("To load data into the application:"),
+            ui.tags.ol(
+                ui.tags.li("Navigate to the 'Data Loading' tab"),
+                ui.tags.li("Choose between uploading your own file or using a sample dataset"),
+                ui.tags.li("If uploading a file, select a file in CSV, Excel, JSON, or RDS format"),
+                ui.tags.li("Click 'Process Data' to load the data"),
+                ui.tags.li("Review the data preview, summary, and data types")
+            ),
+            
+            ui.h4("Data Cleaning"),
+            ui.p("To clean and preprocess your data:"),
+            ui.tags.ol(
+                ui.tags.li("Navigate to the 'Data Cleaning' tab"),
+                ui.tags.li("Select columns to clean"),
+                ui.tags.li("Choose cleaning operations (e.g., fill missing values, remove outliers)"),
+                ui.tags.li("Set parameters for the cleaning operations"),
+                ui.tags.li("Apply the cleaning operations"),
+                ui.tags.li("Review the cleaned data")
+            ),
+            
+            ui.h4("Exploratory Analysis"),
+            ui.p("To explore and visualize your data:"),
+            ui.tags.ol(
+                ui.tags.li("Navigate to the 'Exploratory Analysis' tab"),
+                ui.tags.li("Choose between univariate, bivariate, or correlation analysis"),
+                ui.tags.li("Select variables and visualization types"),
+                ui.tags.li("Adjust visualization parameters"),
+                ui.tags.li("Interpret the results")
+            ),
+            
+            ui.h4("Feature Engineering"),
+            ui.p("To create and transform features:"),
+            ui.tags.ol(
+                ui.tags.li("Navigate to the 'Feature Engineering' tab"),
+                ui.tags.li("Select features to work with"),
+                ui.tags.li("Choose operations (e.g., create ratio features, apply transformations)"),
+                ui.tags.li("Apply the operations"),
+                ui.tags.li("Review the engineered features"),
+                ui.tags.li("Click 'Use Engineered Features' to proceed with the new features")
+            ),
+            
+            ui.h4("Data Download"),
+            ui.p("To export your processed data:"),
+            ui.tags.ol(
+                ui.tags.li("Navigate to the 'Data Download' tab"),
+                ui.tags.li("Select the desired export format (CSV, Excel, JSON, RDS, TSV, Pickle)"),
+                ui.tags.li("Click the download button for your chosen format"),
+                ui.tags.li("Save the file to your local machine")
+            ),
+            
+            ui.h3("Tips and Best Practices", id="tips"),
+            ui.tags.ul(
+                ui.tags.li("Always review your data after loading to understand its structure and quality"),
+                ui.tags.li("Clean your data before performing exploratory analysis or feature engineering"),
+                ui.tags.li("Use visualizations to identify patterns and relationships in your data"),
+                ui.tags.li("Create meaningful features that capture domain knowledge"),
+                ui.tags.li("Document your data processing steps for reproducibility")
+            ),
+            
+            ui.h3("Troubleshooting", id="troubleshooting"),
+            ui.tags.ul(
+                ui.tags.li(ui.strong("Data not loading:"), " Ensure your file is in a supported format and is not corrupted"),
+                ui.tags.li(ui.strong("Cleaning operations not working:"), " Check that you've selected appropriate columns and parameters"),
+                ui.tags.li(ui.strong("Visualizations not displaying:"), " Verify that you've selected valid variables for the chosen plot type"),
+                ui.tags.li(ui.strong("Feature engineering errors:"), " Ensure that your operations are valid for the selected features"),
+                ui.tags.li(ui.strong("Download issues:"), " Check that your data has been processed and is ready for download")
+            )
+        )
+    )
+)
+
+def user_guide_server(input, output, session):
+    # No server-side logic needed for the user guide
+    pass`
+                },
+                {
+                    name: "requirements.txt",
+                    type: "text",
+                    content: `shiny>=0.6.0
+pandas
+numpy
+matplotlib
+plotly
+scikit-learn
+shinywidgets`
+                }
+            ],
+            startFiles: ["app.py"]
+        });
+    </script>
+</body>
+</html> 

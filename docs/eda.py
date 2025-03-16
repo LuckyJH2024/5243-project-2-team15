@@ -139,13 +139,20 @@ def eda_server(input, output, session):
         if data is None or col not in data.columns:
             return ui.p("No data available or column")
         
-        #Get unique values of the column
+        # Get unique values of the column
         unique_values = data[col].dropna().unique()
         
         # If there are too many unique values, use a range slider
         if len(unique_values) > 10 and pd.api.types.is_numeric_dtype(data[col]):
-            min_val = data[col].min()
-            max_val = data[col].max()
+            min_val = float(data[col].min())
+            max_val = float(data[col].max())
+            
+            # Handle infinity values
+            if np.isinf(min_val) or np.isnan(min_val):
+                min_val = -1000
+            if np.isinf(max_val) or np.isnan(max_val):
+                max_val = 1000
+                
             step = (max_val - min_val) / 100 if max_val > min_val else 0.1
             
             return ui.input_slider(
@@ -155,11 +162,25 @@ def eda_server(input, output, session):
                 step=step
             )
         else:
-            # For categorical variables or numerical variables with fewer unique values, use checkboxes
+            # Convert numpy array to dictionary format
+            # Handle possible non-string values
+            choices_dict = {}
+            for val in unique_values:
+                # Handle NaN and infinity values
+                if pd.isna(val) or (isinstance(val, float) and (np.isinf(val) or np.isnan(val))):
+                    continue
+                # Ensure keys are strings
+                str_val = str(val)
+                choices_dict[str_val] = str_val
+            
+            # If no valid values, display a message
+            if not choices_dict:
+                return ui.p("No valid values available for filtering")
+                
             return ui.input_checkbox_group(
                 "filter_values", "Select Values",
-                choices=unique_values,
-                selected=unique_values
+                choices=choices_dict,
+                selected=list(choices_dict.keys())
             )
     
     # Get filtered data
@@ -181,10 +202,27 @@ def eda_server(input, output, session):
             elif hasattr(input, "filter_values"):
                 filter_values = input.filter_values()
                 if filter_values:
-                    return data[data[col].isin(filter_values)]
+                    # Handle string format filter values
+                    if pd.api.types.is_numeric_dtype(data[col]):
+                        # For numeric columns, convert strings back to numbers
+                        numeric_values = []
+                        for val in filter_values:
+                            try:
+                                if '.' in val:
+                                    numeric_values.append(float(val))
+                                else:
+                                    numeric_values.append(int(val))
+                            except ValueError:
+                                # If conversion fails, keep original string
+                                numeric_values.append(val)
+                        return data[data[col].isin(numeric_values)]
+                    else:
+                        # For non-numeric columns, use string values directly
+                        return data[data[col].astype(str).isin(filter_values)]
             
             return data
-        except:
+        except Exception as e:
+            print(f"Error in filtering: {e}")
             return data
     
     # Data summary
@@ -512,7 +550,7 @@ def eda_server(input, output, session):
         features = input.correlation_features()
         method = input.correlation_method().lower()
 
-        # **1️⃣ Data Check: If data is empty or features are not selected**
+        # ** Data Check: If data is empty or features are not selected**
         if data is None or data.empty or not features:
             fig = px.imshow(
                 np.zeros((1,1)),  # Pass 1x1 matrix to prevent imshow() from crashing
@@ -522,7 +560,7 @@ def eda_server(input, output, session):
             return fig
 
         try:
-            # **2️⃣ Check all selected features are in the data**
+            # **Check all selected features are in the data**
             valid_features = [f for f in features if f in data.columns]
             if not valid_features:
                 fig = px.imshow(
@@ -532,10 +570,22 @@ def eda_server(input, output, session):
                 )
                 return fig
 
-            # **3️⃣ Calculate Correlation Matrix**
-            corr_matrix = data[valid_features].corr(method=method)
+            # Preprocess data, replace infinity values and NaN
+            numeric_data = data[valid_features].select_dtypes(include=['number'])
+            # Replace infinity values with NaN
+            numeric_data = numeric_data.replace([np.inf, -np.inf], np.nan)
+            # Fill NaN with median for each column
+            for col in numeric_data.columns:
+                median_val = numeric_data[col].median()
+                if pd.isna(median_val):  # If median is also NaN, fill with 0
+                    numeric_data[col] = numeric_data[col].fillna(0)
+                else:
+                    numeric_data[col] = numeric_data[col].fillna(median_val)
 
-            # **4️⃣ Ensure correlation matrix is not empty**
+            # ** Calculate Correlation Matrix**
+            corr_matrix = numeric_data.corr(method=method)
+
+            # ** Ensure correlation matrix is not empty**
             if corr_matrix.empty or corr_matrix.isna().all().all():
                 fig = px.imshow(
                     np.zeros((1,1)),
@@ -544,16 +594,24 @@ def eda_server(input, output, session):
                 )
                 return fig
 
-            # **5️⃣ Create Correlation Heatmap**
+            # Ensure no NaN values in correlation matrix
+            corr_matrix = corr_matrix.fillna(0)
+
+            # ** Create Correlation Heatmap**
+            # Ensure annotation text doesn't contain NaN or infinity
+            annotation_text = np.round(corr_matrix.values, 2)
+            # Convert any possible NaN or infinity values to string "N/A"
+            annotation_text = np.where(np.isfinite(annotation_text), annotation_text.astype(str), "N/A")
+            
             fig = ff.create_annotated_heatmap(
                 z=corr_matrix.values,
                 x=corr_matrix.columns.tolist(),
                 y=corr_matrix.index.tolist(),
-                annotation_text=np.round(corr_matrix.values, 2).astype(str),
+                annotation_text=annotation_text,
                 colorscale="RdBu_r"
             )
 
-            # **6️⃣ Update Layout**
+            # ** Update Layout**
             fig.update_layout(
                 title=f"{method.capitalize()} Correlation Heatmap",
                 xaxis_title="Features",
@@ -579,7 +637,8 @@ def eda_server(input, output, session):
             return fig
 
         except Exception as e:
-            # **7️⃣ Handle Exception, Avoid imshow() Directly Crashing**
+            # ** Handle Exception, Avoid imshow() Directly Crashing**
+            print(f"Correlation plot error: {str(e)}")
             fig = px.imshow(
                 np.zeros((1,1)),
                 title=f"Correlation Analysis Error: {str(e)}",

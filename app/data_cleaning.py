@@ -28,11 +28,22 @@ data_cleaning_ui = ui.nav_panel(
 
 def data_cleaning_server(input, output, session):
     @reactive.effect
+    def initialize_cleaned_data():
+        raw_data = df_raw.get()
+        if raw_data is not None and df_cleaned.get() is None:
+            df_cleaned.set(raw_data.copy())
+
+    @reactive.effect
     def update_column_choices():
         df = df_raw.get()
-        print("df_raw successfully retrieved")
         if df is not None:
-            session.send_input("column_select", {"choices": df.columns.tolist()})
+            print("df_raw successfully retrieved")
+            columns = df.columns.tolist()
+            ui.update_select(
+                id="column_select",
+                choices=columns,
+                selected=columns[0] if columns else None
+            )
 
     @output
     @render.ui
@@ -42,6 +53,9 @@ def data_cleaning_server(input, output, session):
             return ui.p("No column selected.")
 
         col = input.column_select()
+        if col not in df.columns:
+            return ui.p("Selected column not found in dataset.")
+            
         dtype = df[col].dtype
         suggestions = []
 
@@ -57,9 +71,56 @@ def data_cleaning_server(input, output, session):
 
         return ui.card(*[ui.p(suggestion) for suggestion in suggestions])
 
+    @output
+    @render.table
+    def cleaned_data_table():
+        cleaned_data = df_cleaned.get()
+        if cleaned_data is not None:
+            return cleaned_data.head(10)
+        return pd.DataFrame()
+
     @reactive.effect
+    @reactive.event(input.apply_cleaning)
     def clean_data():
-        df = df_raw.get()
-        if df is None or input.column_select() is None:
+        raw_data = df_raw.get()
+        if raw_data is None or input.column_select() is None:
             return
+            
+        col = input.column_select()
+        if col not in raw_data.columns:
+            return
+            
+        if df_cleaned.get() is None:
+            df_cleaned.set(raw_data.copy())
+            
+        cleaned_data = df_cleaned.get().copy()
+        action = input.cleaning_action()
+        
+        if action == "Fill Missing Values":
+            if cleaned_data[col].dtype in ["int64", "float64"]:
+                cleaned_data[col] = cleaned_data[col].fillna(cleaned_data[col].mean())
+            else:
+                cleaned_data[col] = cleaned_data[col].fillna(cleaned_data[col].mode()[0])
+        elif action == "Remove Outliers":
+            if cleaned_data[col].dtype in ["int64", "float64"]:
+                q1 = cleaned_data[col].quantile(0.25)
+                q3 = cleaned_data[col].quantile(0.75)
+                iqr = q3 - q1
+                lower_bound = q1 - 1.5 * iqr
+                upper_bound = q3 + 1.5 * iqr
+                cleaned_data = cleaned_data[(cleaned_data[col] >= lower_bound) & (cleaned_data[col] <= upper_bound)]
+        elif action == "Convert to Numeric":
+            try:
+                cleaned_data[col] = pd.to_numeric(cleaned_data[col], errors='coerce')
+            except:
+                pass
+        elif action == "Standardize Text":
+            if cleaned_data[col].dtype == "object":
+                cleaned_data[col] = cleaned_data[col].str.lower().str.strip()
+        elif action == "One-Hot Encode":
+            if cleaned_data[col].dtype == "object":
+                dummies = pd.get_dummies(cleaned_data[col], prefix=col)
+                cleaned_data = pd.concat([cleaned_data.drop(col, axis=1), dummies], axis=1)
+        
+        df_cleaned.set(cleaned_data)
 

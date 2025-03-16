@@ -34,7 +34,7 @@ A comprehensive interactive data analysis application built with Python and Shin
 ### Running the Application
 
 ```bash
-cd APP-V2
+cd docs
 python app.py
 ```
 
@@ -55,18 +55,20 @@ The application is organized into several modules, each handling a specific aspe
 
 ```
 .
-├── APP-V2/                 # Main application directory
-│   ├── app.py              # Main application file
-│   ├── data_store.py       # Data storage module
-│   ├── data_loading.py     # Data loading module
-│   ├── data_cleaning.py    # Data cleaning module
-│   ├── eda.py              # Exploratory data analysis module
+├── docs/                    # Main application directory
+│   ├── app.py               # Main application file
+│   ├── data_store.py        # Data storage module
+│   ├── data_loading.py      # Data loading module
+│   ├── data_cleaning.py     # Data cleaning module
+│   ├── eda.py               # Exploratory data analysis module
 │   ├── feature_engineering.py # Feature engineering module
-│   ├── data_download.py    # Data download module
-│   ├── user_guide.py       # User guide module
-│   └── README.md           # Module-specific documentation
-├── requirements.txt        # Project dependencies
-└── README.md               # Project documentation
+│   ├── data_download.py     # Data download module
+│   ├── user_guide.py        # User guide module
+│   ├── README.md            # Module-specific documentation
+│   └── requirements.txt     # Module-specific dependencies
+├── app/                     # Legacy application directory (deprecated)
+├── requirements.txt         # Project dependencies
+└── README.md                # Project documentation
 ```
 
 For more detailed information about each module and how to use the application, please refer to the User Guide tab within the application.

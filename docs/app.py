@@ -111,7 +111,13 @@ app = App(app_ui, server)
 if __name__ == "__main__":
     print("Starting Data Analysis and Feature Engineering Platform...")
     try:
-        app.run(host="0.0.0.0", port=8001)
-        print("Application started, please access http://127.0.0.1:8001 or http://localhost:8001 in your browser")
+        print("Application will be available at: http://127.0.0.1:8001")
+        print("Please access the application using the above URL in your browser")
+        app.run(host="127.0.0.1", port=8001)
     except Exception as e:
-        print(f"Application failed to start: {str(e)}") 
+        print(f"Application failed to start: {str(e)}")
+        # If port is already in use, suggest using a different port
+        if "address already in use" in str(e).lower() or "10048" in str(e):
+            print("Port 8001 is already in use. Try using a different port:")
+            print("Example: app.run(host='127.0.0.1', port=8002)")
+            print("Or stop other running Python processes and try again.") 
