@@ -1,88 +1,72 @@
-# Feature Engineering Application
+# Data Analysis and Feature Engineering Platform
 
-This is a Shiny application for data analysis, built with Python and Shiny.
+A comprehensive interactive data analysis application built with Python and Shiny, providing a complete data processing workflow from data loading to feature engineering.
 
-## Setup and Installation
+## Main Features
 
-1. Create a virtual environment (recommended):
+- **Data Loading**: Upload CSV, Excel, JSON, or RDS files, or use built-in sample datasets
+- **Data Cleaning**: Handle missing values, detect outliers, and convert data types
+- **Exploratory Data Analysis**: Perform univariate, bivariate, and multivariate analysis with visualizations
+- **Feature Engineering**: Create new features, transform existing ones, and apply dimensionality reduction
+- **Data Download**: Export processed data in multiple formats (CSV, Excel, JSON, RDS, TSV, Pickle)
+- **User Guide**: Comprehensive documentation on how to use the application
+
+## Quick Start
+
+### Requirements
+
+- Python 3.8 or higher
+- Dependencies: See requirements.txt
+
+### Installation
+
+1. Clone or download this project
+2. Create and activate a virtual environment (recommended)
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows use: venv\Scripts\activate
+   ```
+3. Install dependencies
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### Running the Application
+
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows use: venv\Scripts\activate
+cd APP-V2
+python app.py
 ```
 
-2. Install the required packages:
-```bash
-pip install -r requirements.txt
-```
+The application will start at http://127.0.0.1:8001 or http://localhost:8001
 
-3. Run the application:
-```bash
-python app/app.py
-```
+## Application Structure
 
-The application will be available at http://127.0.0.1:8000
+The application is organized into several modules, each handling a specific aspect of the data analysis workflow:
 
-## Implemented Features (in feature_engineering.py)
+- **User Guide**: Documentation and instructions for using the application
+- **Data Loading**: Upload and initial processing of datasets
+- **Data Cleaning**: Tools for handling missing values, outliers, and data type conversions
+- **Exploratory Analysis**: Visualization and statistical analysis tools
+- **Feature Engineering**: Tools for creating and transforming features
+- **Data Download**: Export functionality for processed data
 
-The feature engineering module currently implements:
-- Interactive data preview with summary statistics
-- Create ratio features from any two selected columns
-- Delete existing features
-- Apply StandardScaler transformation to selected features
-- Conduct PCA analysis (2 components)
-- Correlation heatmap visualization
-- Restore original dataset functionality
-
-## Project Structure and Development
+## Project Structure
 
 ```
 .
-├── app/
-│   ├── app.py                  # Main application file
-│   ├── feature_engineering.py  # Feature engineering module (implemented)
-│   ├── data_cleaning.py       # Data cleaning module (to be implemented)
-│   └── eda.py                # Exploratory data analysis module (to be implemented)
-├── requirements.txt
-└── README.md
+├── APP-V2/                 # Main application directory
+│   ├── app.py              # Main application file
+│   ├── data_store.py       # Data storage module
+│   ├── data_loading.py     # Data loading module
+│   ├── data_cleaning.py    # Data cleaning module
+│   ├── eda.py              # Exploratory data analysis module
+│   ├── feature_engineering.py # Feature engineering module
+│   ├── data_download.py    # Data download module
+│   ├── user_guide.py       # User guide module
+│   └── README.md           # Module-specific documentation
+├── requirements.txt        # Project dependencies
+└── README.md               # Project documentation
 ```
 
-## Development Guide
-
-1. Current Implementation:
-   - Feature engineering functionality is in `feature_engineering.py`
-   - Uses a modular design with separate UI and server logic
-   - Implements reactive data handling for real-time updates
-
-2. To Continue Development:
-   - Data Cleaning (`data_cleaning.py`): 
-     * Can implement data preprocessing
-     * Handle missing values
-     * Remove outliers
-     * Format data types
-   
-   - Exploratory Data Analysis (`eda.py`):
-     * Add visualization tools
-     * Statistical analysis
-     * Distribution plots
-     * Custom analysis methods
-
-3. Adding New Features:
-   - Each module can be developed independently
-   - Follow the same pattern as in `feature_engineering.py`
-   - Create a UI section (`module_ui`) and server function (`module_server`)
-   - Add new module to main app.py
-
-## Note
-
-The application currently uses sample random data. To use your own dataset, modify the `initialize_data` function in `feature_engineering.py`.
-
-## Contributing
-
-Feel free to:
-- Implement the data cleaning module
-- Add EDA functionality
-- Enhance existing features
-- Add new feature engineering methods
-- Improve visualizations
-
-You can either follow the existing structure or implement your own approach in the designated Python files.
+For more detailed information about each module and how to use the application, please refer to the User Guide tab within the application.
