@@ -72,7 +72,6 @@ data_loading_ui = ui.nav_panel(
             ui.h3("Data Preview"),
             ui.output_text("error_message_main"),
             ui.card(ui.panel_title("Data Preview"), ui.output_table("data_preview")),
-            ui.card(ui.panel_title("Statistical Summary"), ui.p("For preliminary reference only"), ui.output_table("summary_stats")),
             ui.card(ui.panel_title("Data Types"), ui.output_table("data_types")),
         )
     )
