@@ -101,35 +101,35 @@ eda_ui = ui.nav_panel(
 )
 
 def eda_server(input, output, session):
-    # 更新列选择下拉框
+    # Update column selection dropdown
     @reactive.effect
     def update_column_choices():
         data = df_cleaned.get()
         if data is not None:
-            # 获取所有列
+            # Get all columns
             all_columns = data.columns.tolist()
             
-            # 获取数值列
+            # Get numeric columns
             numeric_columns = data.select_dtypes(include=['number']).columns.tolist()
             
-            # 获取分类列
+            # Get categorical columns
             categorical_columns = data.select_dtypes(exclude=['number']).columns.tolist()
             
-            # 更新下拉选择框
+            # Update dropdown selection box
             ui.update_select("filter_col", choices=all_columns, selected=all_columns[0] if all_columns else None)
             ui.update_select("univariate_col", choices=all_columns, selected=all_columns[0] if all_columns else None)
             ui.update_select("x_col", choices=all_columns, selected=numeric_columns[0] if numeric_columns else all_columns[0] if all_columns else None)
             ui.update_select("y_col", choices=all_columns, selected=numeric_columns[1] if len(numeric_columns) > 1 else numeric_columns[0] if numeric_columns else all_columns[0] if all_columns else None)
             
-            # 颜色和大小变量可以为空
+            # Color and size variables can be empty
             color_choices = [None] + all_columns
             ui.update_select("color_col", choices=color_choices, selected=None)
             ui.update_select("size_col", choices=color_choices, selected=None)
             
-            # 更新相关性分析的特征选择
+            # Update feature selection for correlation analysis
             ui.update_checkbox_group("correlation_features", choices=numeric_columns, selected=numeric_columns[:min(5, len(numeric_columns))])
     
-    # 动态生成筛选值UI
+    # Dynamically generate filter value UI
     @output
     @render.ui
     def filter_values_ui():
@@ -139,10 +139,10 @@ def eda_server(input, output, session):
         if data is None or col not in data.columns:
             return ui.p("No data available or column")
         
-        # 获取列的唯一值
+        #Get unique values of the column
         unique_values = data[col].dropna().unique()
         
-        # 如果唯一值太多，使用范围滑块
+        # If there are too many unique values, use a range slider
         if len(unique_values) > 10 and pd.api.types.is_numeric_dtype(data[col]):
             min_val = data[col].min()
             max_val = data[col].max()
@@ -155,14 +155,14 @@ def eda_server(input, output, session):
                 step=step
             )
         else:
-            # 对于分类变量或唯一值较少的数值变量，使用复选框
+            # For categorical variables or numerical variables with fewer unique values, use checkboxes
             return ui.input_checkbox_group(
                 "filter_values", "Select Values",
                 choices=unique_values,
                 selected=unique_values
             )
     
-    # 获取筛选后的数据
+    # Get filtered data
     @reactive.calc
     def get_filtered_data():
         data = df_cleaned.get()
@@ -173,7 +173,7 @@ def eda_server(input, output, session):
         if col not in data.columns:
             return data
         
-        # 根据UI类型进行筛选
+        # Filter based on UI type
         try:
             if hasattr(input, "filter_range"):
                 min_val, max_val = input.filter_range()
@@ -187,7 +187,7 @@ def eda_server(input, output, session):
         except:
             return data
     
-    # 数据摘要
+    # Data summary
     @output
     @render.table
     def summary_stats():
@@ -195,14 +195,14 @@ def eda_server(input, output, session):
         if data.empty:
             return pd.DataFrame({"message": ["No data available"]})
         
-        # 只对数值列计算统计摘要
+        # Calculate statistical summary for numeric columns
         numeric_data = data.select_dtypes(include=['number'])
         if numeric_data.empty:
             return pd.DataFrame({"message": ["No numeric columns available for summary"]})
         
         return numeric_data.describe().reset_index()
     
-    # 单变量分析图表
+    # Univariate analysis charts
     @render_widget
     def univariate_plot():
         data = get_filtered_data()
@@ -213,7 +213,7 @@ def eda_server(input, output, session):
             fig = px.scatter(title="No data available or column")
             return fig
         
-        # 根据数据类型和图表类型创建不同的图表
+        # Create different charts based on data type and chart type
         if pd.api.types.is_numeric_dtype(data[col]):
             if plot_type == "Histogram":
                 fig = px.histogram(
@@ -252,7 +252,7 @@ def eda_server(input, output, session):
                     template="plotly_white"
                 )
         else:
-            # 对于分类变量，显示条形图
+            #For categorical variables, display a bar chart
             value_counts = data[col].value_counts().reset_index()
             value_counts.columns = ['value', 'count']
             
@@ -264,12 +264,12 @@ def eda_server(input, output, session):
                 template="plotly_white"
             )
         
-        # 设置图表高度和宽度
+        # Set chart height and width
         fig.update_layout(height=400, width=None)
         
         return fig
     
-    # 单变量统计信息
+    # Univariate statistical information
     @output
     @render.ui
     def univariate_stats():
@@ -302,7 +302,7 @@ def eda_server(input, output, session):
         
         return ui.div(*stats)
     
-    # 双变量分析图表
+    # Bivariate analysis charts
     @render_widget
     def bivariate_plot():
         data = get_filtered_data()
@@ -317,14 +317,14 @@ def eda_server(input, output, session):
             fig = px.scatter(title="No data available or column")
             return fig
         
-        # 检查颜色和大小列是否存在
+        # Check whether the color and size columns exist
         if color_col and color_col not in data.columns:
             color_col = None
         if size_col and size_col not in data.columns:
             size_col = None
         
         try:
-            # 根据图表类型创建不同的图表
+            # Create different charts based on the chart type
             if plot_type == "Scatter Plot":
                 trendline = None
                 if trendline_type == "Linear Regression (OLS)":
@@ -354,9 +354,9 @@ def eda_server(input, output, session):
                 )
             
             elif plot_type == "Bar Chart":
-                # 对于柱状图，我们需要对数据进行聚合
+                # For bar charts, we need to aggregate the data
                 if pd.api.types.is_numeric_dtype(data[y_col]):
-                    # 如果Y是数值，计算每个X值的平均Y值
+                    #If Y is numeric, calculate the average Y value for each X value
                     agg_data = data.groupby(x_col)[y_col].mean().reset_index()
                     fig = px.bar(
                         agg_data, 
@@ -367,7 +367,7 @@ def eda_server(input, output, session):
                         template="plotly_white"
                     )
                 else:
-                    # 如果Y不是数值，计算每个X-Y组合的计数
+                    # If Y is not numeric, count the occurrences of each X-Y combination
                     agg_data = data.groupby([x_col, y_col]).size().reset_index(name='count')
                     fig = px.bar(
                         agg_data, 
@@ -379,9 +379,9 @@ def eda_server(input, output, session):
                     )
             
             elif plot_type == "Heatmap":
-                # 对于热力图，我们需要对数据进行聚合
+                # For heatmaps, we need to aggregate the data
                 if pd.api.types.is_numeric_dtype(data[y_col]):
-                    # 如果Y是数值，计算每个X值的平均Y值
+                    #If Y is numeric, calculate the average Y value for each X value
                     pivot_data = data.pivot_table(
                         values=y_col, 
                         index=x_col, 
@@ -394,7 +394,7 @@ def eda_server(input, output, session):
                         template="plotly_white"
                     )
                 else:
-                    # 如果Y不是数值，计算每个X-Y组合的计数
+                    # If Y is not numeric, count each X-Y combination
                     pivot_data = pd.crosstab(data[x_col], data[y_col])
                     fig = px.imshow(
                         pivot_data,
@@ -402,16 +402,16 @@ def eda_server(input, output, session):
                         template="plotly_white"
                     )
         except Exception as e:
-            # 如果出现任何错误，返回一个带有错误信息的空图表
+            # If any error occurs, return an empty chart with an error message
             fig = px.scatter(title=f"Chart Generation Error: {str(e)}")
             return fig
         
-        # 设置图表高度和宽度
+        # Set chart height and width
         fig.update_layout(height=400, width=None)
         
         return fig
     
-    # 双变量统计信息
+    #Bivariate statistical information
     @output
     @render.ui
     def bivariate_stats():
@@ -424,9 +424,9 @@ def eda_server(input, output, session):
         
         stats = []
         
-        # 如果两个变量都是数值型，计算相关性
+        # If both variables are numerical, calculate the correlation
         if pd.api.types.is_numeric_dtype(data[x_col]) and pd.api.types.is_numeric_dtype(data[y_col]):
-            # 计算相关系数
+            # Calculate correlation coefficient.
             pearson_corr = data[[x_col, y_col]].corr().iloc[0, 1]
             spearman_corr = data[[x_col, y_col]].corr(method='spearman').iloc[0, 1]
             
@@ -434,12 +434,12 @@ def eda_server(input, output, session):
             stats.append(ui.p(f"Pearson Correlation Coefficient: {pearson_corr:.4f}"))
             stats.append(ui.p(f"Spearman Correlation Coefficient: {spearman_corr:.4f}"))
             
-            # 简单的线性回归
+            # Simple linear regression
             from sklearn.linear_model import LinearRegression
             X = data[x_col].values.reshape(-1, 1)
             y = data[y_col].values
             
-            # 删除缺失值
+            #Remove missing values.
             mask = ~np.isnan(X.flatten()) & ~np.isnan(y)
             X = X[mask].reshape(-1, 1)
             y = y[mask]
@@ -453,27 +453,27 @@ def eda_server(input, output, session):
                 stats.append(ui.p(f"Linear Regression Intercept: {model.intercept_:.4f}"))
                 stats.append(ui.p(f"R²: {r2:.4f}"))
         
-        # 如果一个是分类变量，一个是数值变量，计算每个类别的统计信息
+        #If one is a categorical variable and the other is a numerical variable, compute the statistics for each category
         elif (pd.api.types.is_numeric_dtype(data[x_col]) and not pd.api.types.is_numeric_dtype(data[y_col])) or \
              (not pd.api.types.is_numeric_dtype(data[x_col]) and pd.api.types.is_numeric_dtype(data[y_col])):
             
-            # 确定哪个是分类变量，哪个是数值变量
+            # Determine which is the categorical variable and which is the numerical variable
             cat_col, num_col = (y_col, x_col) if pd.api.types.is_numeric_dtype(data[x_col]) else (x_col, y_col)
             
             stats.append(ui.h4(f"{cat_col} and {num_col} Relationship"))
             
-            # 计算每个类别的统计信息
+            #Calculate statistics for each category
             group_stats = data.groupby(cat_col)[num_col].agg(['mean', 'median', 'std', 'count']).reset_index()
             
-            # 显示每个类别的统计信息
+            #Display statistics for each category
             stats.append(ui.p("Each Category Statistics:"))
             for _, row in group_stats.iterrows():
                 stats.append(ui.p(f"- {row[cat_col]}: Mean={row['mean']:.4g}, Median={row['median']:.4g}, Std={row['std']:.4g}, Count={row['count']}"))
             
-            # 计算ANOVA
+            # Perform ANOVA (Analysis of Variance)
             from scipy import stats as scipy_stats
             
-            # 准备ANOVA的数据
+            # Prepare data for ANOVA (Analysis of Variance)
             groups = []
             for category in data[cat_col].unique():
                 group_data = data[data[cat_col] == category][num_col].dropna()
@@ -485,17 +485,17 @@ def eda_server(input, output, session):
                 stats.append(ui.p(f"ANOVA Test: F Value={f_val:.4g}, p Value={p_val:.4g}"))
                 stats.append(ui.p(f"Conclusion: {'Categories have significant differences' if p_val < 0.05 else 'Categories have no significant differences'}"))
         
-        # 如果两个都是分类变量，计算卡方检验
+        # If both variables are categorical, compute the Chi-square test
         else:
-            # 创建列联表
+            # Create a contingency table
             contingency_table = pd.crosstab(data[x_col], data[y_col])
             
             stats.append(ui.h4(f"{x_col} and {y_col} Relationship"))
             
-            # 计算卡方检验
+            #Calculate the chi-square test
             from scipy import stats as scipy_stats
             
-            # 确保列联表中的每个单元格都有足够的观测值
+            # Ensure that each cell in the contingency table has sufficient observations
             if contingency_table.size > 0 and (contingency_table > 5).all().all():
                 chi2, p, dof, expected = scipy_stats.chi2_contingency(contingency_table)
                 stats.append(ui.p(f"Chi-Square Test: χ²={chi2:.4g}, p Value={p:.4g}, Degrees of Freedom={dof}"))
@@ -505,7 +505,7 @@ def eda_server(input, output, session):
         
         return ui.div(*stats)
     
-    # 相关性分析图表
+    # Correlation analysis chart
     @render_widget
     def correlation_plot():
         data = get_filtered_data()
