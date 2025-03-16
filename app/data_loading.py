@@ -51,15 +51,12 @@ data_loading_ui = ui.nav_panel(
 )
 
 def data_loading_server(input, output, session):
-	df_raw = reactive.value(None)
-	error_store = reactive.value("")
-	
 	@output
 	@render.text
 	def file_name():
 		file_info = input.file()
 		if file_info: 
-			return f"Selected file: {file_info[0]["name"]}"
+			return f"Selected file: {file_info[0]['name']}"
 		return "No file selected"
 	
 	@output
@@ -109,11 +106,11 @@ def data_loading_server(input, output, session):
 
 					else:
 						error_store.set("Unsupported file type")
-						df_store.set(None)
+						df_raw.set(None)
 						return
 
 					df_raw.set(df)
-					print("df_raw sucessfully set")
+					print("df_raw successfully set")
 					error_store.set("")
 					
 					p.set(100, "Reading Complete!")

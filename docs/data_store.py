@@ -1,19 +1,19 @@
 from shiny import reactive
 
-# 原始数据
+# Raw data
 df_raw = reactive.Value(None)
 
-# 清洗后的数据
+# Cleaned data
 df_cleaned = reactive.Value(None)
 
-# 特征工程后的数据
+# Data after feature engineering
 df_engineered = reactive.Value(None)
 
-# 错误信息
+# Error messages
 error_store = reactive.Value("")
 
-# 当前选择的模型
+# Currently selected model
 selected_model = reactive.Value(None)
 
-# 模型评估结果
+# Model evaluation results
 model_results = reactive.Value(None) 
