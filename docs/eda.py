@@ -629,7 +629,6 @@ def eda_server(input, output, session):
                 # Set color scale title and position
                 fig.data[0].colorbar = dict(
                     title="Correlation Coefficient",
-                    titleside="right",
                     thickness=15,
                     len=0.9
                 )
