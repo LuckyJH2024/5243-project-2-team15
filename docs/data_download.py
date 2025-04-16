@@ -106,7 +106,6 @@ data_download_layout = ui.card_header(ui.h3("Download Processed Data")),
     ui.card_footer(
         ui.p("Note: The downloaded data is the final data after cleaning and processing. For original data, please return to the Data Loading page and re-upload.")
     )
-)
 
 
 def data_download_server(input, output, session):
