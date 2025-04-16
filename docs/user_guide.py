@@ -1,9 +1,7 @@
 from shiny import ui, reactive, render
 
 # User Guide UI
-user_guide_ui = ui.nav_panel(
-    "User Guide",
-    ui.card(
+user_guide_layout = ui.card(
         ui.card_header(ui.h2("Data Explorer & Comparison Tool - User Guide")),
         ui.card_body(
             ui.h3("Overview"),
@@ -163,3 +161,8 @@ user_guide_ui = ui.nav_panel(
 def user_guide_server(input, output, session):
     # No server-side logic needed for the user guide
     pass 
+
+
+user_guide_ui = ui.nav_panel("User Guide", user_guide_layout)
+
+user_guide_body = user_guide_layout
