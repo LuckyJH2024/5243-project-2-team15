@@ -257,4 +257,4 @@ def data_download_server(input, output, session):
 
 data_download_ui = ui.nav_panel("Data Download", data_download_layout)
 
-data_download_body = data_dowload_layout
+data_download_body = data_download_layout
