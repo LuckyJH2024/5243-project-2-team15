@@ -18,8 +18,35 @@ app_description = ""  # Removed the introduction text
 
 print("Creating UI components...")
 
+# Google Analytics 4 snippet
+analytics_script = ui.head_content(
+    ui.tags.script(async_="true", src="https://www.googletagmanager.com/gtag/js?id=G-LMHG83C2FS"),
+    ui.tags.script("""
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-LMHG83C2FS');
+    """),
+    ui.tags.script("""
+        document.addEventListener("DOMContentLoaded", function() {
+            document.body.addEventListener("click", function(e) {
+                let target = e.target;
+                if (target.tagName === "BUTTON" || target.type === "button" || target.classList.contains("btn")) {
+                    const label = target.innerText || target.id || "unnamed_button";
+                    gtag('event', 'button_click', {
+                        'event_category': 'Button',
+                        'event_label': label,
+                        'value': 1
+                    });
+                }
+            });
+        });
+    """)
+)
+
 # Application UI
 app_ui = ui.page_fluid(
+    analytics_script, 
     ui.h1(app_title, class_ = "app-title"),
     ui.output_ui("main_ui"))
 
