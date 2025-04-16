@@ -9,9 +9,7 @@ from data_store import df_cleaned, df_engineered, error_store
 from shinywidgets import output_widget, render_widget
 
 # Feature Engineering UI
-feature_engineering_ui = ui.nav_panel(
-    "Feature Engineering",
-    ui.layout_sidebar(
+feature_engineering_layout = ui.layout_sidebar(
         ui.sidebar(
             ui.div(  # Add a div container with fixed height and scrollbar
                 ui.h3("Feature Engineering Tools"),
@@ -555,3 +553,7 @@ def feature_engineering_server(input, output, session):
         # This function might be called when the engineered features are passed to the model training module
         # In this example, we just display a message
         error_store.set("Feature engineering completed, next step can be performed") 
+
+feature_engineering_ui = ui.nav_panel("Feature Engineering", feature_engineering_layout)
+
+feature_engineering_body = feature_engineering_layout
