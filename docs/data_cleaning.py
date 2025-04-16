@@ -364,3 +364,4 @@ def data_cleaning_server(input, output, session):
             
         except Exception as e:
             error_store.set(f"Cleaning operation failed: {str(e)}") 
+    data_cleaning_body = data_cleaning_ui.children[1]
