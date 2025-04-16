@@ -1,8 +1,8 @@
 import random
 from shiny import reactive
-from shiny import App, ui, session
+from shiny import App, render,  ui, session
 from data_loading import data_loading_ui, data_loading_server
-from data_cleaning import data_cleaning_ui, data_cleaning_server
+from data_cleaning import data_cleaning_ui, data_cleaning_server, data_cleaning_body
 from feature_engineering import feature_engineering_ui, feature_engineering_server
 from eda import eda_ui, eda_server
 from data_download import data_download_ui, data_download_server
@@ -21,7 +21,7 @@ print("Creating UI components...")
 # Application UI
 app_ui = ui.page_fluid(
     ui.h1(app_title, class_ = "app-title"),
-    ui.output_ui("main_ui")
+    ui.output_ui("main_ui"))
 
 print("Defining server functions...")
 
@@ -35,7 +35,7 @@ def server(input, output, session):
     def assign_ab_variant():
         user_ab_variant.set(user_variant.get())
 
-    current_sep = reactive.Value(1)
+    current_step = reactive.Value(1)
 
     @output
     @render.ui
@@ -89,7 +89,6 @@ def server(input, output, session):
                 )
             }
             return steps.get(step, ui.p("Invalid step"))
-            }
 
         # Step navigation logic
         @reactive.Effect

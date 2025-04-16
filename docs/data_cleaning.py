@@ -6,9 +6,7 @@ from data_store import df_raw, df_cleaned, error_store
 from shinywidgets import output_widget, render_widget
 
 # Data Cleaning UI
-data_cleaning_ui = ui.nav_panel(
-    "Data Cleaning",
-    ui.layout_sidebar(
+data_cleaning_layout = ui.layout_sidebar(
         ui.sidebar(
             ui.div(
                 ui.h3("Data Cleaning Tools"),
@@ -58,7 +56,6 @@ data_cleaning_ui = ui.nav_panel(
             row_heights=[1, 2]    # Data preview card height is twice the column information card
         )
     )
-)
 
 def data_cleaning_server(input, output, session):
     # Initialize cleaned data
@@ -364,4 +361,7 @@ def data_cleaning_server(input, output, session):
             
         except Exception as e:
             error_store.set(f"Cleaning operation failed: {str(e)}") 
-    data_cleaning_body = data_cleaning_ui.children[1]
+
+data_cleaning_ui = ui.nav_panel("Data Cleaning", data_cleaning_layout)
+
+data_cleaning_body = data_cleaning_layout
