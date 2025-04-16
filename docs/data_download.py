@@ -14,10 +14,7 @@ except ImportError:
     HAS_PYREADR = False
 
 # Data Download UI
-data_download_ui = ui.nav_panel(
-    "Data Download",
-    ui.card(
-        ui.card_header(ui.h3("Download Processed Data")),
+data_download_layout =ui.card_header(ui.h3("Download Processed Data")),
         ui.layout_columns(
             ui.value_box(
                 "Data Status",
@@ -257,3 +254,7 @@ def data_download_server(input, output, session):
         pickle_data.seek(0)
         
         return pickle_data.getvalue() 
+
+data_download_ui = ui.nav_panel("Data Download", data_download_layout)
+
+data_download_body = data_dowload_layout
