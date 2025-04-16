@@ -1,5 +1,8 @@
 from shiny import reactive
 
+# A/B testing variant 
+user_ab_variant = reactive.Value(None)
+
 # Raw data
 df_raw = reactive.Value(None)
 

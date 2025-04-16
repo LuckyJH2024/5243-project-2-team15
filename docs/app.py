@@ -1,4 +1,6 @@
-from shiny import App, ui
+import random
+from shiny import reactive
+from shiny import App, ui, session
 from data_loading import data_loading_ui, data_loading_server
 from data_cleaning import data_cleaning_ui, data_cleaning_server
 from feature_engineering import feature_engineering_ui, feature_engineering_server
@@ -6,6 +8,7 @@ from eda import eda_ui, eda_server
 from data_download import data_download_ui, data_download_server
 from user_guide import user_guide_ui, user_guide_server
 from data_store import df_raw, df_cleaned, df_engineered, error_store
+from data_store import user_ab_variant
 
 print("Initializing application...")
 
@@ -94,6 +97,12 @@ print("Defining server functions...")
 # Server function
 def server(input, output, session):
     print("Server function called...")
+    
+    user_variant = reactive.Value(random.choice(["A","B"]))
+    
+    def assign_ab_variant():
+        user_ab_variant.set(user_variant.get())
+    
     # Initialize server functions for each module
     user_guide_server(input, output, session)
     data_loading_server(input, output, session)
