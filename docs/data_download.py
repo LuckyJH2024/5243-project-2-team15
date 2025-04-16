@@ -14,7 +14,8 @@ except ImportError:
     HAS_PYREADR = False
 
 # Data Download UI
-data_download_layout = ui.card_header(ui.h3("Download Processed Data")),
+data_download_layout = ui.div(
+    ui.card_header(ui.h3("Download Processed Data")),
     ui.layout_columns(
         ui.value_box(
             "Data Status",
@@ -106,7 +107,7 @@ data_download_layout = ui.card_header(ui.h3("Download Processed Data")),
     ui.card_footer(
         ui.p("Note: The downloaded data is the final data after cleaning and processing. For original data, please return to the Data Loading page and re-upload.")
     )
-
+)
 
 def data_download_server(input, output, session):
     # Data status
