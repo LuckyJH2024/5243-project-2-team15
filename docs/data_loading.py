@@ -40,10 +40,7 @@ table_styles = ui.tags.style("""
 """)
 
 # Data Loading UI
-data_loading_ui = ui.nav_panel(
-    "Data Loading",
-    table_styles,
-    ui.layout_sidebar(
+data_loading_layout = ui.layout_sidebar(
         ui.sidebar(
             ui.h3("Upload Data"),
             ui.input_file("file",
@@ -260,3 +257,8 @@ def data_loading_server(input, output, session):
         if df is not None:
             return pd.DataFrame(df.dtypes, columns=["Data Type"]).reset_index().rename(columns={"index": "Column Name"})
         return pd.DataFrame() 
+
+data_loading_ui = ui.nav_panel(
+    "Data Loading",
+    table_styles, data_loading_layout)
+data_loading_body = data_loading_layout
