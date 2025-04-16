@@ -156,7 +156,6 @@ user_guide_layout = ui.card(
             ui.p("For more information or assistance, please contact the development team.")
         )
     )
-)
 
 def user_guide_server(input, output, session):
     # No server-side logic needed for the user guide

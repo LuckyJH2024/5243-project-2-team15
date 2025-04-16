@@ -5,7 +5,7 @@ from data_loading import data_loading_ui, data_loading_server, data_loading_body
 from data_cleaning import data_cleaning_ui, data_cleaning_server, data_cleaning_body
 from feature_engineering import feature_engineering_ui, feature_engineering_server, feature_engineering_body
 from eda import eda_ui, eda_server, eda_body
-from data_download import data_download_ui, data_download_server, download_body
+from data_download import data_download_ui, data_download_server, data_download_body
 from user_guide import user_guide_ui, user_guide_server, user_guide_body
 from data_store import df_raw, df_cleaned, df_engineered, error_store
 from data_store import user_ab_variant
@@ -83,7 +83,7 @@ def server(input, output, session):
                 ),
                 6: ui.card(
                     ui.h3("Step 6: Download"),
-                    download_body,
+                    data_download_body,
                     ui.input_action_button("back5", "Back"),
                     ui.p("\U0001F389 You're done!")
                 )
