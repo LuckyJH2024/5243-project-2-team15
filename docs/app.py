@@ -1,12 +1,12 @@
 import random
 from shiny import reactive
 from shiny import App, render,  ui, session
-from data_loading import data_loading_ui, data_loading_server
+from data_loading import data_loading_ui, data_loading_server, data_loading_body
 from data_cleaning import data_cleaning_ui, data_cleaning_server, data_cleaning_body
-from feature_engineering import feature_engineering_ui, feature_engineering_server
-from eda import eda_ui, eda_server
-from data_download import data_download_ui, data_download_server
-from user_guide import user_guide_ui, user_guide_server
+from feature_engineering import feature_engineering_ui, feature_engineering_server, feature_engineering_body
+from eda import eda_ui, eda_server, eda_body
+from data_download import data_download_ui, data_download_server, download_body
+from user_guide import user_guide_ui, user_guide_server, user_guide_body
 from data_store import df_raw, df_cleaned, df_engineered, error_store
 from data_store import user_ab_variant
 
@@ -54,36 +54,36 @@ def server(input, output, session):
             steps = {
                 1: ui.card(
                     ui.h3("Step 1: User Guide"),
-                    user_guide_ui.children[1], 
+                    user_guide_body, 
                     ui.input_action_button("next1", "Next", class_ = "btn-primary")
                 ),
                 2: ui.card(
                     ui.h3("Step 2: Data Loading"),
-                    data_loading_ui.children[1], 
+                    data_loading_body, 
                     ui.input_action_button("back1", "Back"),
                     ui.input_action_button("next2", "Next", class_ = "btn-primary")
                 ),
                 3: ui.card(
                     ui.h3("Step 3: Data Cleaning"),
-                    data_loading_ui.children[1], 
+                    data_cleaning_body, 
                     ui.input_action_button("back2", "Back"),
                     ui.input_action_button("next3", "Next", class_ = "btn-primary")
                 ),
                 4: ui.card(
                     ui.h3("Step 4: EDA"),
-                    data_loading_ui.children[1], 
+                    eda_body], 
                     ui.input_action_button("back3", "Back"),
                     ui.input_action_button("next4", "Next", class_ = "btn-primary")
                 ),
                 5: ui.card(
                     ui.h3("Step 4: Feature Engineering"),
-                    data_loading_ui.children[1], 
+                    feature_engineering_body, 
                     ui.input_action_button("back4", "Back"),
                     ui.input_action_button("next5", "Next", class_ = "btn-primary")
                 ),
                 6: ui.card(
                     ui.h3("Step 6: Download"),
-                    data_download_ui.children[1],
+                    download_body,
                     ui.input_action_button("back5", "Back"),
                     ui.p("\U0001F389 You're done!")
                 )
