@@ -8,9 +8,7 @@ from data_store import df_cleaned, error_store
 from shinywidgets import output_widget, render_widget
 
 # Exploratory Data Analysis UI
-eda_ui = ui.nav_panel(
-    "Exploratory Analysis",
-    ui.layout_sidebar(
+eda_layout = ui.layout_sidebar(
         ui.sidebar(
             ui.div(  # Add a div container with fixed height and scrollbar
                 ui.h3("Data Analysis Tools"),
@@ -644,3 +642,7 @@ def eda_server(input, output, session):
                 color_continuous_scale="gray"
             )
             return fig
+
+eda_ui = ui.nav_panel("Exploratory Analysis", eda_layout)
+
+eda_body = eda_layout
