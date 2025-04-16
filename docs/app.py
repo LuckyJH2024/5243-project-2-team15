@@ -37,6 +37,56 @@ def server(input, output, session):
 
     current_step = reactive.Value(1)
 
+    # Step navigation logic
+    @reactive.Effect
+    @reactive.event(input.next1)
+    def _(): current_step.set(2)
+    
+    @reactive.Effect
+    @reactive.event(input.back1)
+    def _(): current_step.set(1)
+    
+    @reactive.Effect
+    @reactive.event(input.next2)
+    def _(): current_step.set(3)
+    
+    @reactive.Effect
+    @reactive.event(input.back2)
+    def _(): current_step.set(2)
+    
+    @reactive.Effect
+    @reactive.event(input.next3)
+    def _(): current_step.set(4)
+    
+    @reactive.Effect
+    @reactive.event(input.back3)
+    def _(): current_step.set(3)
+    
+    @reactive.Effect
+    @reactive.event(input.next4)
+    def _(): current_step.set(5)
+    
+    @reactive.Effect
+    @reactive.event(input.back4)
+    def _(): current_step.set(4)
+    
+    @reactive.Effect
+    @reactive.event(input.next5)
+    def _(): current_step.set(6)
+    
+    @reactive.Effect
+    @reactive.event(input.back5)
+    def _(): current_step.set(5)
+    
+    # Initialize server functions for each module
+    user_guide_server(input, output, session)
+    data_loading_server(input, output, session)
+    data_cleaning_server(input, output, session)
+    eda_server(input, output, session)
+    feature_engineering_server(input, output, session)
+    data_download_server(input, output, session)
+    print("All module server functions initialized...")
+    
     @output
     @render.ui
     def main_ui():
@@ -89,56 +139,6 @@ def server(input, output, session):
                 )
             }
             return steps.get(step, ui.p("Invalid step"))
-
-# Step navigation logic
-@reactive.Effect
-@reactive.event(input.next1)
-def _(): current_step.set(2)
-
-@reactive.Effect
-@reactive.event(input.back1)
-def _(): current_step.set(1)
-
-@reactive.Effect
-@reactive.event(input.next2)
-def _(): current_step.set(3)
-
-@reactive.Effect
-@reactive.event(input.back2)
-def _(): current_step.set(2)
-
-@reactive.Effect
-@reactive.event(input.next3)
-def _(): current_step.set(4)
-
-@reactive.Effect
-@reactive.event(input.back3)
-def _(): current_step.set(3)
-
-@reactive.Effect
-@reactive.event(input.next4)
-def _(): current_step.set(5)
-
-@reactive.Effect
-@reactive.event(input.back4)
-def _(): current_step.set(4)
-
-@reactive.Effect
-@reactive.event(input.next5)
-def _(): current_step.set(6)
-
-@reactive.Effect
-@reactive.event(input.back5)
-def _(): current_step.set(5)
-
-# Initialize server functions for each module
-user_guide_server(input, output, session)
-data_loading_server(input, output, session)
-data_cleaning_server(input, output, session)
-eda_server(input, output, session)
-feature_engineering_server(input, output, session)
-data_download_server(input, output, session)
-print("All module server functions initialized...")
 
 # Create application
 print("Creating application instance...")
