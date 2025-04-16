@@ -20,7 +20,7 @@ print("Creating UI components...")
 
 # Application UI
 app_ui = ui.page_fluid(
-    ui.h1(app_title, class_ = "app-title),
+    ui.h1(app_title, class_ = "app-title"),
     ui.output_ui("main_ui")
 
 print("Defining server functions...")
