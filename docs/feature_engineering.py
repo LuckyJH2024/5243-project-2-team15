@@ -97,7 +97,6 @@ feature_engineering_layout = ui.layout_sidebar(
             id="feature_engineering_tabs"
         )
     )
-)
 
 def feature_engineering_server(input, output, session):
     # Initialize feature engineering data

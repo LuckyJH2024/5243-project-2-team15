@@ -96,7 +96,6 @@ eda_layout = ui.layout_sidebar(
             id="analysis_tabs"  # Add ID for potential future interaction control
         )
     )
-)
 
 def eda_server(input, output, session):
     # Update column selection dropdown

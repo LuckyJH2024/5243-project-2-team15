@@ -72,7 +72,6 @@ data_loading_layout = ui.layout_sidebar(
             ui.card(ui.panel_title("Data Types"), ui.output_table("data_types")),
         )
     )
-)
 
 def data_loading_server(input, output, session):
     @output
