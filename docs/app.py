@@ -71,7 +71,7 @@ def server(input, output, session):
                 ),
                 4: ui.card(
                     ui.h3("Step 4: EDA"),
-                    eda_body], 
+                    eda_body, 
                     ui.input_action_button("back3", "Back"),
                     ui.input_action_button("next4", "Next", class_ = "btn-primary")
                 ),
