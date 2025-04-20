@@ -4,13 +4,11 @@ import numpy as np
 import plotly.express as px
 import plotly.figure_factory as ff
 import plotly.graph_objects as go
-from data_store import df_cleaned, error_store
+from data_store import df_cleaned, error_store, user_ab_variant
 from shinywidgets import output_widget, render_widget
 
 # Exploratory Data Analysis UI
-eda_ui = ui.nav_panel(
-    "Exploratory Analysis",
-    ui.layout_sidebar(
+eda_layout = ui.layout_sidebar(
         ui.sidebar(
             ui.div(  # Add a div container with fixed height and scrollbar
                 ui.h3("Data Analysis Tools"),
@@ -98,7 +96,6 @@ eda_ui = ui.nav_panel(
             id="analysis_tabs"  # Add ID for potential future interaction control
         )
     )
-)
 
 def eda_server(input, output, session):
     # Update column selection dropdown
@@ -128,7 +125,9 @@ def eda_server(input, output, session):
             
             # Update feature selection for correlation analysis
             ui.update_checkbox_group("correlation_features", choices=numeric_columns, selected=numeric_columns[:min(5, len(numeric_columns))])
-    
+            
+            print(f"EDA: Updated column choices with {len(all_columns)} columns")
+
     # Dynamically generate filter value UI
     @output
     @render.ui
@@ -644,3 +643,33 @@ def eda_server(input, output, session):
                 color_continuous_scale="gray"
             )
             return fig
+
+eda_ui = ui.nav_panel("Exploratory Analysis", eda_layout)
+
+eda_body = eda_layout
+
+# Export a standalone version of update_column_choices for external calling
+def update_column_choices(input=None, output=None, session=None):
+    data = df_cleaned.get()
+    if data is not None:
+        # Get all columns
+        all_columns = data.columns.tolist()
+        
+        # Get numeric columns
+        numeric_columns = data.select_dtypes(include=['number']).columns.tolist()
+        
+        # Update dropdown selection box
+        ui.update_select("filter_col", choices=all_columns, selected=all_columns[0] if all_columns else None)
+        ui.update_select("univariate_col", choices=all_columns, selected=all_columns[0] if all_columns else None)
+        ui.update_select("x_col", choices=all_columns, selected=numeric_columns[0] if numeric_columns else all_columns[0] if all_columns else None)
+        ui.update_select("y_col", choices=all_columns, selected=numeric_columns[1] if len(numeric_columns) > 1 else numeric_columns[0] if numeric_columns else all_columns[0] if all_columns else None)
+        
+        # Color and size variables can be empty
+        color_choices = [None] + all_columns
+        ui.update_select("color_col", choices=color_choices, selected=None)
+        ui.update_select("size_col", choices=color_choices, selected=None)
+        
+        # Update feature selection for correlation analysis
+        ui.update_checkbox_group("correlation_features", choices=numeric_columns, selected=numeric_columns[:min(5, len(numeric_columns))])
+        
+        print(f"EDA externally synced: {len(all_columns)} columns")

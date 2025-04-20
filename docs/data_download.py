@@ -1,5 +1,5 @@
 from shiny import ui, reactive, render
-from data_store import df_cleaned, error_store
+from data_store import df_cleaned, error_store, user_ab_variant
 import pandas as pd
 import io
 import json
@@ -14,101 +14,98 @@ except ImportError:
     HAS_PYREADR = False
 
 # Data Download UI
-data_download_ui = ui.nav_panel(
-    "Data Download",
-    ui.card(
-        ui.card_header(ui.h3("Download Processed Data")),
+data_download_layout = ui.div(
+    ui.card_header(ui.h3("Download Processed Data")),
+    ui.layout_columns(
+        ui.value_box(
+            "Data Status",
+            ui.output_text("data_status"),
+            showcase=ui.output_ui("data_status_icon"),
+            theme="bg-success"
+        ),
+        ui.value_box(
+            "Data Size",
+            ui.output_text("data_size"),
+            showcase=ui.tags.i(class_="fa fa-database"),
+            theme="bg-info"
+        ),
+        ui.value_box(
+            "Column Count",
+            ui.output_text("column_count"),
+            showcase=ui.tags.i(class_="fa fa-table"),
+            theme="bg-primary"
+        ),
+        col_widths=[4, 4, 4]
+    ),
+    ui.card_body(
+        ui.h4("Select Download Format"),
         ui.layout_columns(
-            ui.value_box(
-                "Data Status",
-                ui.output_text("data_status"),
-                showcase=ui.output_ui("data_status_icon"),
-                theme="bg-success"
+            ui.card(
+                ui.card_header(ui.h5("CSV Format")),
+                ui.card_body(
+                    ui.p("Comma-separated values file, suitable for most data analysis tools and spreadsheet software."),
+                    ui.input_checkbox("csv_include_index", "Include Row Index", False),
+                    ui.download_button("download_csv", "Download CSV File", class_="btn-primary w-100")
+                )
             ),
-            ui.value_box(
-                "Data Size",
-                ui.output_text("data_size"),
-                showcase=ui.tags.i(class_="fa fa-database"),
-                theme="bg-info"
+            ui.card(
+                ui.card_header(ui.h5("Excel Format")),
+                ui.card_body(
+                    ui.p("Microsoft Excel file, suitable for spreadsheet software."),
+                    ui.input_checkbox("excel_include_index", "Include Row Index", False),
+                    ui.download_button("download_excel", "Download Excel File", class_="btn-primary w-100")
+                )
             ),
-            ui.value_box(
-                "Column Count",
-                ui.output_text("column_count"),
-                showcase=ui.tags.i(class_="fa fa-table"),
-                theme="bg-primary"
+            ui.card(
+                ui.card_header(ui.h5("JSON Format")),
+                ui.card_body(
+                    ui.p("JavaScript Object Notation, suitable for web applications and APIs."),
+                    ui.input_select(
+                        "json_orient", 
+                        "JSON Format Type", 
+                        choices=["records", "columns", "index", "split", "table"],
+                        selected="records"
+                    ),
+                    ui.download_button("download_json", "Download JSON File", class_="btn-primary w-100")
+                )
             ),
             col_widths=[4, 4, 4]
         ),
-        ui.card_body(
-            ui.h4("Select Download Format"),
-            ui.layout_columns(
-                ui.card(
-                    ui.card_header(ui.h5("CSV Format")),
-                    ui.card_body(
-                        ui.p("Comma-separated values file, suitable for most data analysis tools and spreadsheet software."),
-                        ui.input_checkbox("csv_include_index", "Include Row Index", False),
-                        ui.download_button("download_csv", "Download CSV File", class_="btn-primary w-100")
-                    )
-                ),
-                ui.card(
-                    ui.card_header(ui.h5("Excel Format")),
-                    ui.card_body(
-                        ui.p("Microsoft Excel file, suitable for spreadsheet software."),
-                        ui.input_checkbox("excel_include_index", "Include Row Index", False),
-                        ui.download_button("download_excel", "Download Excel File", class_="btn-primary w-100")
-                    )
-                ),
-                ui.card(
-                    ui.card_header(ui.h5("JSON Format")),
-                    ui.card_body(
-                        ui.p("JavaScript Object Notation, suitable for web applications and APIs."),
-                        ui.input_select(
-                            "json_orient", 
-                            "JSON Format Type", 
-                            choices=["records", "columns", "index", "split", "table"],
-                            selected="records"
-                        ),
-                        ui.download_button("download_json", "Download JSON File", class_="btn-primary w-100")
-                    )
-                ),
-                col_widths=[4, 4, 4]
+        ui.layout_columns(
+            ui.card(
+                ui.card_header(ui.h5("RDS Format")),
+                ui.card_body(
+                    ui.p("R Data Storage format, suitable for R language analysis."),
+                    ui.output_ui("rds_status"),
+                    ui.download_button("download_rds", "Download RDS File", class_="btn-primary w-100")
+                )
             ),
-            ui.layout_columns(
-                ui.card(
-                    ui.card_header(ui.h5("RDS Format")),
-                    ui.card_body(
-                        ui.p("R Data Storage format, suitable for R language analysis."),
-                        ui.output_ui("rds_status"),
-                        ui.download_button("download_rds", "Download RDS File", class_="btn-primary w-100")
-                    )
-                ),
-                ui.card(
-                    ui.card_header(ui.h5("TSV Format")),
-                    ui.card_body(
-                        ui.p("Tab-separated values file, suitable for text processing and specific analysis tools."),
-                        ui.input_checkbox("tsv_include_index", "Include Row Index", False),
-                        ui.download_button("download_tsv", "Download TSV File", class_="btn-primary w-100")
-                    )
-                ),
-                ui.card(
-                    ui.card_header(ui.h5("Pickle Format")),
-                    ui.card_body(
-                        ui.p("Python serialization format, suitable for Python data analysis."),
-                        ui.input_select(
-                            "pickle_protocol", 
-                            "Pickle Protocol Version", 
-                            choices=["4", "5"],
-                            selected="4"
-                        ),
-                        ui.download_button("download_pickle", "Download Pickle File", class_="btn-primary w-100")
-                    )
-                ),
-                col_widths=[4, 4, 4]
-            )
-        ),
-        ui.card_footer(
-            ui.p("Note: The downloaded data is the final data after cleaning and processing. For original data, please return to the Data Loading page and re-upload.")
+            ui.card(
+                ui.card_header(ui.h5("TSV Format")),
+                ui.card_body(
+                    ui.p("Tab-separated values file, suitable for text processing and specific analysis tools."),
+                    ui.input_checkbox("tsv_include_index", "Include Row Index", False),
+                    ui.download_button("download_tsv", "Download TSV File", class_="btn-primary w-100")
+                )
+            ),
+            ui.card(
+                ui.card_header(ui.h5("Pickle Format")),
+                ui.card_body(
+                    ui.p("Python serialization format, suitable for Python data analysis."),
+                    ui.input_select(
+                        "pickle_protocol", 
+                        "Pickle Protocol Version", 
+                        choices=["4", "5"],
+                        selected="4"
+                    ),
+                    ui.download_button("download_pickle", "Download Pickle File", class_="btn-primary w-100")
+                )
+            ),
+            col_widths=[4, 4, 4]
         )
+    ),
+    ui.card_footer(
+        ui.p("Note: The downloaded data is the final data after cleaning and processing. For original data, please return to the Data Loading page and re-upload.")
     )
 )
 
@@ -257,3 +254,7 @@ def data_download_server(input, output, session):
         pickle_data.seek(0)
         
         return pickle_data.getvalue() 
+
+data_download_ui = ui.nav_panel("Data Download", data_download_layout)
+
+data_download_body = data_download_layout

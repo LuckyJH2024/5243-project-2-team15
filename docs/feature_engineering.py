@@ -5,13 +5,11 @@ import plotly.express as px
 import plotly.graph_objects as go
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 from sklearn.decomposition import PCA
-from data_store import df_cleaned, df_engineered, error_store
+from data_store import df_cleaned, df_engineered, error_store, user_ab_variant
 from shinywidgets import output_widget, render_widget
 
 # Feature Engineering UI
-feature_engineering_ui = ui.nav_panel(
-    "Feature Engineering",
-    ui.layout_sidebar(
+feature_engineering_layout = ui.layout_sidebar(
         ui.sidebar(
             ui.div(  # Add a div container with fixed height and scrollbar
                 ui.h3("Feature Engineering Tools"),
@@ -99,7 +97,6 @@ feature_engineering_ui = ui.nav_panel(
             id="feature_engineering_tabs"
         )
     )
-)
 
 def feature_engineering_server(input, output, session):
     # Initialize feature engineering data
@@ -153,6 +150,8 @@ def feature_engineering_server(input, output, session):
             # Update checkbox groups
             ui.update_checkbox_group("numeric_features", choices=numeric_columns, selected=numeric_columns)
             ui.update_checkbox_group("pca_features", choices=numeric_columns, selected=numeric_columns[:min(5, len(numeric_columns))])
+            
+            print(f"Feature Engineering: Updated with {len(all_columns)} columns")
     
     # Get current engineered data
     @reactive.calc
@@ -555,3 +554,44 @@ def feature_engineering_server(input, output, session):
         # This function might be called when the engineered features are passed to the model training module
         # In this example, we just display a message
         error_store.set("Feature engineering completed, next step can be performed") 
+
+feature_engineering_ui = ui.nav_panel("Feature Engineering", feature_engineering_layout)
+
+feature_engineering_body = feature_engineering_layout
+
+# Export independent initialization function for external calling
+def initialize_engineered_data():
+    cleaned_data = df_cleaned.get()
+    if cleaned_data is not None and df_engineered.get() is None:
+        # Only keep numeric columns for feature engineering
+        numeric_data = cleaned_data.select_dtypes(include=['number'])
+        if not numeric_data.empty:
+            df_engineered.set(numeric_data.copy())
+        else:
+            # If no numeric columns, use original data
+            df_engineered.set(cleaned_data.copy())
+        print("Feature Engineering data initialized externally")
+
+# Export independent UI update function for external calling
+def update_feature_choices(input=None, output=None, session=None):
+    data = df_engineered.get()
+    if data is not None:
+        # Get all columns
+        all_columns = data.columns.tolist()
+        
+        # Get numeric columns
+        numeric_columns = data.select_dtypes(include=['number']).columns.tolist()
+        
+        # Update dropdown selection boxes
+        ui.update_select("feature1_select", choices=all_columns, selected=all_columns[0] if all_columns else None)
+        ui.update_select("feature2_select", choices=all_columns, selected=all_columns[1] if len(all_columns) > 1 else all_columns[0] if all_columns else None)
+        ui.update_select("delete_feature_select", choices=all_columns, selected=all_columns[0] if all_columns else None)
+        ui.update_select("transform_feature_select", choices=numeric_columns, selected=numeric_columns[0] if numeric_columns else None)
+        ui.update_select("viz_feature1", choices=numeric_columns, selected=numeric_columns[0] if numeric_columns else None)
+        ui.update_select("viz_feature2", choices=numeric_columns, selected=numeric_columns[1] if len(numeric_columns) > 1 else numeric_columns[0] if numeric_columns else None)
+        
+        # Update checkbox groups
+        ui.update_checkbox_group("numeric_features", choices=numeric_columns, selected=numeric_columns)
+        ui.update_checkbox_group("pca_features", choices=numeric_columns, selected=numeric_columns[:min(5, len(numeric_columns))])
+        
+        print(f"Feature Engineering UI externally synced: {len(all_columns)} columns")

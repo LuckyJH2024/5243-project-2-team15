@@ -10,6 +10,7 @@ A comprehensive interactive data analysis application built with Python and Shin
 - **Feature Engineering**: Create new features, transform existing ones, and apply dimensionality reduction
 - **Data Download**: Export processed data in multiple formats (CSV, Excel, JSON, RDS, TSV, Pickle)
 - **User Guide**: Comprehensive documentation on how to use the application
+- **A/B Testing UI**: Platform supports two different navigation paradigms (tab-based and step-based) for user experience testing
 
 ## Quick Start
 
@@ -50,6 +51,23 @@ The application is organized into several modules, each handling a specific aspe
 - **Exploratory Analysis**: Visualization and statistical analysis tools
 - **Feature Engineering**: Tools for creating and transforming features
 - **Data Download**: Export functionality for processed data
+
+## A/B Testing User Interface
+
+The application features two different navigation paradigms for user testing:
+
+- **Version A**: Traditional tab-based navigation that allows access to any module at any time
+- **Version B**: Step-by-step guided workflow with "Next" and "Back" buttons to progress through the analysis pipeline
+
+The system randomly assigns one of these versions to each user session. Both versions provide the same functionality but with different user experience approaches.
+
+## UI Synchronization
+
+The application implements automatic UI synchronization when switching between modules. This ensures that:
+
+- UI elements like dropdown menus and checkboxes are automatically populated with the current dataset's columns
+- Module-specific UI is correctly refreshed when navigating between modules
+- Users don't need to manually refresh or reset the interface when moving through the workflow
 
 ## Project Structure
 
