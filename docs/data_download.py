@@ -1,5 +1,5 @@
 from shiny import ui, reactive, render
-from data_store import df_cleaned, error_store
+from data_store import df_cleaned, error_store, user_ab_variant
 import pandas as pd
 import io
 import json

@@ -1,11 +1,11 @@
 {
     "https://api.shinyapps.io": {
         "server_url": "https://api.shinyapps.io",
-        "filename": "G:\\2025 SPRING\\5293\\HW2\\5243-project-2-team15\\docs",
+        "filename": "/Users/jameshan/Documents/GitHub/5243-project-2-team15/docs",
         "app_url": "https://jameshan.shinyapps.io/da_tool/",
         "app_id": 14257788,
         "app_guid": null,
-        "title": "DA_TOOL",
+        "title": "DAtool_ABtest",
         "app_mode": "python-shiny",
         "app_store_version": 1
     }

@@ -1,10 +1,11 @@
 from shiny import ui, reactive, render
-from data_store import df_raw, df_cleaned, error_store
+from data_store import df_raw, df_cleaned, error_store, user_ab_variant
 import time
 import pandas as pd
 import numpy as np
 import json
 import os
+import io
 
 # Check if pyreadr library is installed for reading RDS files
 try:

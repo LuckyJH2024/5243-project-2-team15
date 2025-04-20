@@ -2,7 +2,7 @@ from shiny import ui, reactive, render
 import pandas as pd
 import numpy as np
 import plotly.express as px
-from data_store import df_raw, df_cleaned, error_store
+from data_store import df_raw, df_cleaned, error_store, user_ab_variant
 from shinywidgets import output_widget, render_widget
 
 # Data Cleaning UI
@@ -64,8 +64,22 @@ def data_cleaning_server(input, output, session):
         raw_data = df_raw.get()
         if raw_data is not None and df_cleaned.get() is None:
             df_cleaned.set(raw_data.copy())
+            # Make sure to update the UI when setting initial data
+            sync_ui_with_data()
+    
+    # Explicit function to sync UI with data
+    def sync_ui_with_data():
+        data = df_cleaned.get()
+        if data is not None:
+            columns = data.columns.tolist()
+            ui.update_select(
+                id="column_select",
+                choices=columns,
+                selected=columns[0] if columns else None
+            )
+            print(f"Data Cleaning synced: {len(columns)} columns")
 
-    # Update column selection dropdown
+    # Update column selection dropdown whenever the cleaned data changes
     @reactive.effect
     def update_column_choices():
         data = df_cleaned.get()
@@ -76,6 +90,7 @@ def data_cleaning_server(input, output, session):
                 choices=columns,
                 selected=columns[0] if columns else None
             )
+            print(f"Updated column choices with {len(columns)} columns")
 
     # Get currently selected column
     @reactive.calc
@@ -276,6 +291,8 @@ def data_cleaning_server(input, output, session):
         if raw_data is not None:
             df_cleaned.set(raw_data.copy())
             error_store.set("Data has been reset to original state")
+            # Make sure to update the UI after resetting
+            sync_ui_with_data()
 
     # Apply cleaning operation
     @reactive.effect
@@ -362,6 +379,38 @@ def data_cleaning_server(input, output, session):
         except Exception as e:
             error_store.set(f"Cleaning operation failed: {str(e)}") 
 
+    @reactive.calc
+    def data_state_monitor():
+        """Monitor data state to ensure UI is synchronized with data"""
+        data = df_cleaned.get()
+        if data is not None:
+            return {"has_data": True, "columns": data.columns.tolist()}
+        return {"has_data": False, "columns": []}
+
+    @reactive.effect
+    def sync_ui_with_data_state():
+        """Synchronize UI with data state"""
+        state = data_state_monitor()
+        if state["has_data"]:
+            ui.update_select(
+                id="column_select",
+                choices=state["columns"],
+                selected=state["columns"][0] if state["columns"] else None
+            )
+            print(f"B version monitor: Updated column choices with {len(state['columns'])} columns")
+
 data_cleaning_ui = ui.nav_panel("Data Cleaning", data_cleaning_layout)
 
 data_cleaning_body = data_cleaning_layout
+
+# Export a standalone version of sync_ui_with_data for external calling
+def sync_ui_with_data(input=None, output=None, session=None):
+    data = df_cleaned.get()
+    if data is not None:
+        columns = data.columns.tolist()
+        ui.update_select(
+            id="column_select",
+            choices=columns,
+            selected=columns[0] if columns else None
+        )
+        print(f"Data Cleaning externally synced: {len(columns)} columns")

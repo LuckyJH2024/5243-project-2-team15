@@ -64,6 +64,66 @@ def server(input, output, session):
 
     current_step = reactive.Value(1)
 
+    # Module sync function
+    def sync_module_ui():
+        try:
+            # Get current step or tab
+            if user_variant.get() == "A":
+                # Version A uses tab navigation
+                if hasattr(input, "navbar"):
+                    current_tab = input.navbar()
+                    print(f"Version A: Tab changed to {current_tab}")
+                    
+                    # Synchronize UI based on current tab
+                    if current_tab == "Data Cleaning":
+                        print("Syncing Data Cleaning UI")
+                        from data_cleaning import sync_ui_with_data
+                        sync_ui_with_data(input, output, session)
+                    elif current_tab == "Exploratory Analysis":
+                        print("Syncing EDA UI")
+                        from eda import update_column_choices
+                        update_column_choices(input, output, session)
+                    elif current_tab == "Feature Engineering":
+                        print("Syncing Feature Engineering UI")
+                        from feature_engineering import initialize_engineered_data, update_feature_choices
+                        initialize_engineered_data()
+                        update_feature_choices(input, output, session)
+            else:
+                # Version B uses step navigation
+                step = current_step.get()
+                print(f"Version B: Step changed to {step}")
+                
+                # Synchronize UI based on current step
+                if step == 3:  # Data Cleaning
+                    print("Syncing Data Cleaning UI")
+                    from data_cleaning import sync_ui_with_data
+                    sync_ui_with_data(input, output, session)
+                elif step == 4:  # EDA
+                    print("Syncing EDA UI")
+                    from eda import update_column_choices
+                    update_column_choices(input, output, session)
+                elif step == 5:  # Feature Engineering
+                    print("Syncing Feature Engineering UI")
+                    from feature_engineering import initialize_engineered_data, update_feature_choices
+                    initialize_engineered_data()
+                    update_feature_choices(input, output, session)
+        except Exception as e:
+            print(f"Error syncing module UI: {str(e)}")
+
+    # Version A: Listen for tab changes
+    @reactive.Effect
+    @reactive.event(input.navbar)
+    def on_tab_change():
+        if user_variant.get() == "A":
+            sync_module_ui()
+
+    # Version B: Listen for step changes
+    @reactive.Effect
+    @reactive.event(current_step)
+    def on_step_change():
+        if user_variant.get() == "B":
+            sync_module_ui()
+            
     # Step navigation logic
     @reactive.Effect
     @reactive.event(input.next1)
