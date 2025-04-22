@@ -70,12 +70,12 @@ def server(input, output, session):
 
     # Step names mapping for both step navigation and analytics
     step_names = {
-        1: "Step 1: User Guide",
-        2: "Step 2: Data Loading",
-        3: "Step 3: Data Cleaning",
-        4: "Step 4: EDA",
-        5: "Step 5: Feature Engineering",
-        6: "Step 6: Download"
+        1: "B_UserGuide",
+        2: "B_DataLoading",
+        3: "B_DataCleaning",
+        4: "B_EDA",
+        5: "B_FeatureEngineering",
+        6: "B_Download"
     }
 
     user_variant = reactive.Value(random.choice(["A","B"]))
@@ -113,12 +113,12 @@ def server(input, output, session):
                     print(f"Version A: Tab changed to {current_tab}")
 
                     tab_mapping = {
-                        "User Guide": "Step 1: User Guide",
-                        "Data Loading": "Step 2: Data Loading",
-                        "Data Cleaning": "Step 3: Data Cleaning",
-                        "Exploratory Analysis": "Step 4: EDA",
-                        "Feature Engineering": "Step 5: Feature Engineering",
-                        "Download": "Step 6: Download"
+                        "User Guide": "A_UserGuide",
+                        "Data Loading": "A_DataLoading",
+                        "Data Cleaning": "A_DataCleaning",
+                        "Exploratory Analysis": "A_EDA",
+                        "Feature Engineering": "A_FeatureEngineering",
+                        "Download": "A_Download"
                     }
                     label = tab_mapping.get(current_tab, current_tab)
 
@@ -193,29 +193,16 @@ def server(input, output, session):
             last_tab_switch_time.set(now)
 
             tab_mapping = {
-                "User Guide": "Step 1: User Guide",
-                "Data Loading": "Step 2: Data Loading",
-                "Data Cleaning": "Step 3: Data Cleaning",
-                "Exploratory Analysis": "Step 4: EDA",
-                "Feature Engineering": "Step 5: Feature Engineering",
-                "Data Download": "Step 6: Download"
+                "User Guide": "A_UserGuide",
+                "Data Loading": "A_DataLoading",
+                "Data Cleaning": "A_DataCleaning",
+                "Exploratory Analysis": "A_EDA",
+                "Feature Engineering": "A_FeatureEngineering",
+                "Data Download": "A_Download"
             }
             label = tab_mapping.get(current_tab, current_tab)
-            timestamp = int(time.time())
             last_tab.set(label)
             user_flow.append(label)
-
-            def tab_click_script():
-                return ui.tags.script(f"""
-                    gtag('event', 'tab_click', {{
-                        'event_category': 'Navigation',
-                        'event_label': '{label}',
-                        'value': 1,
-                        'variant': 'A',
-                        'event_timestamp': {timestamp}
-                    }});
-                """)
-            output.analytics_step_event = render.ui(tab_click_script)
 
             sync_module_ui()
 
@@ -224,7 +211,7 @@ def server(input, output, session):
     def analytics_step_event():
         if user_variant.get() == "A":
             label = last_tab.get()
-            return ui.tags.script(f"""
+            script = f"""
                 gtag('event', 'tab_click', {{
                     'event_category': 'Navigation',
                     'event_label': '{label}',
@@ -232,18 +219,22 @@ def server(input, output, session):
                     'variant': 'A',
                     'event_timestamp': {int(time.time())}
                 }});
-            """)
+            """
+            print("[Debug] GA Script:", script)
+            return ui.tags.script(script)
         else:
             step = current_step.get()
             step_label = step_names.get(step, f"Step {step}")
-            return ui.tags.script(f"""
+            script = f"""
                 gtag('event', 'step_change', {{
                     'event_category': 'Navigation',
                     'event_label': '{step_label}',
                     'value': {step},
                     'variant': 'B'
                 }});
-            """)
+            """
+            print("[Debug] GA Script:", script)
+            return ui.tags.script(script)
 
     @reactive.Effect
     @reactive.event(current_step)
@@ -268,9 +259,7 @@ def server(input, output, session):
             last_tab_switch_time.set(now)
             user_flow.append(step_names.get(current_step.get(), f"Step {current_step.get()}"))
 
-            step = current_step.get()
-            step_label = step_names.get(step, f"Step {step}")
-            print(f"Version B: Step changed to {step_label}")
+            print(f"Version B: Step changed to {new_step}")
             sync_module_ui()
 
     # Step navigation logic
@@ -410,7 +399,7 @@ def server(input, output, session):
                 print(f"Tracked button click: {name_mapping[clicked]} at {int(time.time())}, variant: {user_variant.get()}")
 
                 def button_click_script():
-                    return ui.tags.script(f"""
+                    script = f"""
                         gtag('event', 'button_click', {{
                             'event_category': 'Navigation',
                             'event_label': '{name_mapping[clicked]}',
@@ -418,7 +407,9 @@ def server(input, output, session):
                             'event_timestamp': {int(time.time())},
                             'variant': '{user_variant.get()}'
                         }});
-                    """)
+                    """
+                    print("[Debug] GA Button Script:", script)
+                    return ui.tags.script(script)
                 output.analytics_step_event = render.ui(button_click_script)
 
 # Create application
@@ -448,7 +439,7 @@ if __name__ == "__main__":
         print("Session duration (seconds):", round(time.time() - session_start_time, 2))
         print("User flow:", user_flow)
         # Send session summary event to Google Analytics
-        output.analytics_summary_event = render.ui(lambda: ui.tags.script(f"""
+        script = f"""
             gtag('event', 'session_summary', {{
                 'variant': '{user_variant.get()}',
                 'session_duration': {round(time.time() - session_start_time, 2)},
@@ -456,4 +447,6 @@ if __name__ == "__main__":
                 'tab_durations': { {k: round(v, 2) for k, v in tab_durations.items()} },
                 'user_flow': {user_flow},
             }});
-        """))
+        """
+        print("[Debug] GA Summary Script:", script)
+        output.analytics_summary_event = render.ui(lambda: ui.tags.script(script))
