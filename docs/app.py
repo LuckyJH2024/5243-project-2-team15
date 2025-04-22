@@ -51,7 +51,8 @@ app_ui = ui.page_fluid(
     ui.h1(app_title, class_ = "app-title"),
     ui.output_ui("main_ui"),
     ui.output_ui("analytics_init_script"),
-    ui.output_ui("analytics_step_event"))
+    ui.output_ui("analytics_step_event"),
+    ui.output_ui("analytics_summary_event"))
 
 print("Defining server functions...")
 
@@ -60,7 +61,25 @@ def server(input, output, session):
     print("Server function called...")
     from shiny.express import ui as xui
 
+    session_id = id(session)
+    session_start_time = time.time()
+    tab_visit_counts = {}
+    last_tab_switch_time = reactive.Value(time.time())
+    tab_durations = {}
+    user_flow = []
+
+    # Step names mapping for both step navigation and analytics
+    step_names = {
+        1: "Step 1: User Guide",
+        2: "Step 2: Data Loading",
+        3: "Step 3: Data Cleaning",
+        4: "Step 4: EDA",
+        5: "Step 5: Feature Engineering",
+        6: "Step 6: Download"
+    }
+
     user_variant = reactive.Value(random.choice(["A","B"]))
+    last_tab = reactive.Value("User Guide")
 
     @output
     @render.ui
@@ -103,15 +122,17 @@ def server(input, output, session):
                     }
                     label = tab_mapping.get(current_tab, current_tab)
 
-                    output.analytics_step_event = render.ui(lambda: ui.tags.script(f"""
-                        gtag('event', 'step_switch', {{
-                            'event_category': 'Navigation',
-                            'event_label': '{label}',
-                            'value': 1,
-                            'variant': '{user_variant.get()}',
-                            'event_timestamp': {int(time.time())}
-                        }});
-                    """))
+                    def tab_click_script():
+                        return ui.tags.script(f"""
+                            gtag('event', 'step_switch', {{
+                                'event_category': 'Navigation',
+                                'event_label': '{label}',
+                                'value': 1,
+                                'variant': '{user_variant.get()}',
+                                'event_timestamp': {int(time.time())}
+                            }});
+                        """)
+                    output.analytics_step_event = render.ui(tab_click_script)
 
                     # Synchronize UI based on current tab
                     if current_tab == "Data Cleaning":
@@ -155,6 +176,22 @@ def server(input, output, session):
     def on_tab_change():
         if user_variant.get() == "A":
             current_tab = input.navbar()
+            now = time.time()
+            prev_tab = last_tab.get()
+            duration = now - last_tab_switch_time.get()
+
+            if prev_tab in tab_durations:
+                tab_durations[prev_tab] += duration
+            else:
+                tab_durations[prev_tab] = duration
+
+            if current_tab in tab_visit_counts:
+                tab_visit_counts[current_tab] += 1
+            else:
+                tab_visit_counts[current_tab] = 1
+
+            last_tab_switch_time.set(now)
+
             tab_mapping = {
                 "User Guide": "Step 1: User Guide",
                 "Data Loading": "Step 2: Data Loading",
@@ -164,36 +201,76 @@ def server(input, output, session):
                 "Data Download": "Step 6: Download"
             }
             label = tab_mapping.get(current_tab, current_tab)
-            print(f"[TRACKING] Tab switch detected for Variant A -> {label} at {int(time.time())}")
+            timestamp = int(time.time())
+            last_tab.set(label)
+            user_flow.append(label)
 
-            output.analytics_step_event = render.ui(lambda: ui.tags.script(f"""
-                gtag('event', 'tab_switch', {{
-                    'event_category': 'Navigation',
-                    'event_label': '{label}',
-                    'value': 1,
-                    'variant': '{user_variant.get()}',
-                    'event_timestamp': {int(time.time())}
-                }});
-            """))
+            def tab_click_script():
+                return ui.tags.script(f"""
+                    gtag('event', 'tab_click', {{
+                        'event_category': 'Navigation',
+                        'event_label': '{label}',
+                        'value': 1,
+                        'variant': 'A',
+                        'event_timestamp': {timestamp}
+                    }});
+                """)
+            output.analytics_step_event = render.ui(tab_click_script)
+
             sync_module_ui()
 
     @output(id="analytics_step_event")
     @render.ui
     def analytics_step_event():
-        step = current_step.get()
-        return ui.tags.script(f"""
-            gtag('event', 'step_change', {{
-                'event_category': 'Navigation',
-                'event_label': 'Step {step}',
-                'value': {step},
-                'variant': '{user_variant.get()}'
-            }});
-        """)
+        if user_variant.get() == "A":
+            label = last_tab.get()
+            return ui.tags.script(f"""
+                gtag('event', 'tab_click', {{
+                    'event_category': 'Navigation',
+                    'event_label': '{label}',
+                    'value': 1,
+                    'variant': 'A',
+                    'event_timestamp': {int(time.time())}
+                }});
+            """)
+        else:
+            step = current_step.get()
+            step_label = step_names.get(step, f"Step {step}")
+            return ui.tags.script(f"""
+                gtag('event', 'step_change', {{
+                    'event_category': 'Navigation',
+                    'event_label': '{step_label}',
+                    'value': {step},
+                    'variant': 'B'
+                }});
+            """)
 
     @reactive.Effect
     @reactive.event(current_step)
     def on_step_change():
         if user_variant.get() == "B":
+            now = time.time()
+            prev_step = step_names.get(current_step.get(), f"Step {current_step.get()}")
+            duration = now - last_tab_switch_time.get()
+
+            if prev_step in tab_durations:
+                tab_durations[prev_step] += duration
+            else:
+                tab_durations[prev_step] = duration
+
+            current_step_val = current_step.get()
+            new_step = step_names.get(current_step_val, f"Step {current_step_val}")
+            if new_step in tab_visit_counts:
+                tab_visit_counts[new_step] += 1
+            else:
+                tab_visit_counts[new_step] = 1
+
+            last_tab_switch_time.set(now)
+            user_flow.append(step_names.get(current_step.get(), f"Step {current_step.get()}"))
+
+            step = current_step.get()
+            step_label = step_names.get(step, f"Step {step}")
+            print(f"Version B: Step changed to {step_label}")
             sync_module_ui()
 
     # Step navigation logic
@@ -256,7 +333,8 @@ def server(input, output, session):
                 data_cleaning_ui,
                 eda_ui,
                 feature_engineering_ui,
-                data_download_ui
+                data_download_ui,
+                id="navbar"  # <- Add this line
             )
         else:
             step = current_step.get()
@@ -299,6 +377,50 @@ def server(input, output, session):
             }
             return steps.get(step, ui.p("Invalid step"))
 
+    # Track button click events for navigation
+    @reactive.Effect
+    def track_button_clicks():
+        if user_variant.get() == "A":
+            return  # Skip button tracking for Variant A
+        @reactive.event(input.next1, input.back1, input.next2, input.back2, input.next3, input.back3,
+                        input.next4, input.back4, input.next5, input.back5)
+        def _():
+            name_mapping = {
+                "next1": "Next to Data Loading",
+                "back1": "Back to User Guide",
+                "next2": "Next to Data Cleaning",
+                "back2": "Back to Data Loading",
+                "next3": "Next to EDA",
+                "back3": "Back to Data Cleaning",
+                "next4": "Next to Feature Engineering",
+                "back4": "Back to EDA",
+                "next5": "Next to Download",
+                "back5": "Back to Feature Engineering"
+            }
+
+            print(f"Input values at event trigger: {[(name, getattr(input, name)()) for name in name_mapping]}")
+
+            clicked = None
+            for name in name_mapping:
+                if getattr(input, name)() is not None:
+                    clicked = name
+                    break
+
+            if clicked:
+                print(f"Tracked button click: {name_mapping[clicked]} at {int(time.time())}, variant: {user_variant.get()}")
+
+                def button_click_script():
+                    return ui.tags.script(f"""
+                        gtag('event', 'button_click', {{
+                            'event_category': 'Navigation',
+                            'event_label': '{name_mapping[clicked]}',
+                            'value': 1,
+                            'event_timestamp': {int(time.time())},
+                            'variant': '{user_variant.get()}'
+                        }});
+                    """)
+                output.analytics_step_event = render.ui(button_click_script)
+
 # Create application
 print("Creating application instance...")
 app = App(app_ui, server)
@@ -317,40 +439,21 @@ if __name__ == "__main__":
             print("Port 8001 is already in use. Try using a different port:")
             print("Example: app.run(host='127.0.0.1', port=8002)")
             print("Or stop other running Python processes and try again.")
-
-    # Track button click events for navigation
+    # Utility to print session summary (for debugging/logging)
     @reactive.Effect
-    def track_button_clicks():
-        @reactive.event(input.next1, input.back1, input.next2, input.back2, input.next3, input.back3,
-                        input.next4, input.back4, input.next5, input.back5)
-        def _():
-            name_mapping = {
-                "next1": "Next to Data Loading",
-                "back1": "Back to User Guide",
-                "next2": "Next to Data Cleaning",
-                "back2": "Back to Data Loading",
-                "next3": "Next to EDA",
-                "back3": "Back to Data Cleaning",
-                "next4": "Next to Feature Engineering",
-                "back4": "Back to EDA",
-                "next5": "Next to Download",
-                "back5": "Back to Feature Engineering"
-            }
-
-            clicked = None
-            for name in name_mapping:
-                if getattr(input, name)() is not None:
-                    clicked = name
-                    break
-
-            if clicked:
-                print(f"Tracked button click: {name_mapping[clicked]} at {int(time.time())}, variant: {user_variant.get()}")
-                output.analytics_step_event = render.ui(lambda: ui.tags.script(f"""
-                    gtag('event', 'button_click', {{
-                        'event_category': 'Navigation',
-                        'event_label': '{name_mapping[clicked]}',
-                        'value': 1,
-                        'event_timestamp': {int(time.time())},
-                        'variant': '{user_variant.get()}'
-                    }});
-                """))
+    def print_session_summary():
+        print("Session ended.")
+        print("Tab visit counts:", tab_visit_counts)
+        print("Tab durations (seconds):", {k: round(v, 2) for k, v in tab_durations.items()})
+        print("Session duration (seconds):", round(time.time() - session_start_time, 2))
+        print("User flow:", user_flow)
+        # Send session summary event to Google Analytics
+        output.analytics_summary_event = render.ui(lambda: ui.tags.script(f"""
+            gtag('event', 'session_summary', {{
+                'variant': '{user_variant.get()}',
+                'session_duration': {round(time.time() - session_start_time, 2)},
+                'tab_visits': {tab_visit_counts},
+                'tab_durations': { {k: round(v, 2) for k, v in tab_durations.items()} },
+                'user_flow': {user_flow},
+            }});
+        """))
